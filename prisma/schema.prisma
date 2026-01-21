@@ -1,0 +1,395 @@
+// prisma/schema.prisma
+// DevPath - Learning Path System
+// Version: 1.0.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum CareerGoal {
+  FRONTEND
+  BACKEND
+  FULLSTACK
+  AI_PYTHON
+}
+
+enum LearningBackground {
+  NO_BACKGROUND
+  SELF_TAUGHT
+  BOOTCAMP
+  CS_DEGREE
+}
+
+enum QuestionType {
+  SINGLE_CHOICE
+  MULTIPLE_CHOICE
+}
+
+enum ActivityType {
+  LESSON_VIEW
+  QUIZ_ATTEMPT
+  AI_CHAT
+}
+
+// ============================================
+// USER & AUTHENTICATION
+// ============================================
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  role      UserRole  @default(USER)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  onboardingData    OnboardingData?
+  userLearningPaths UserLearningPath[]
+  userProgress      UserProgress[]
+  quizResults       QuizResult[]
+  learningSessions  LearningSession[]
+  aiInteractionLogs AIInteractionLog[]
+  otpCodes          OTPCode[]
+
+  @@map("users")
+}
+
+model OTPCode {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  email     String
+  code      String
+  expiresAt DateTime @map("expires_at")
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, code])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ============================================
+// ONBOARDING
+// ============================================
+
+model OnboardingData {
+  id                 String             @id @default(uuid())
+  userId             String             @unique @map("user_id")
+  careerGoal         CareerGoal         @map("career_goal")
+  priorKnowledge     Json               @map("prior_knowledge") // ["html", "css", "javascript"]
+  learningBackground LearningBackground @map("learning_background")
+  hoursPerWeek       Int                @map("hours_per_week")
+  completedAt        DateTime           @default(now()) @map("completed_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_data")
+}
+
+// ============================================
+// LEARNING PATH STRUCTURE
+// ============================================
+
+model LearningPath {
+  id             String  @id @default(uuid())
+  name           String
+  slug           String  @unique
+  description    String  @db.Text
+  icon           String? // Icon name or URL
+  difficulty     String  // "beginner" | "intermediate" | "advanced"
+  estimatedHours Int     @map("estimated_hours")
+  isPublished    Boolean @default(false) @map("is_published")
+  order          Int     @default(0) // For sorting in UI
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tracks            Track[]
+  userLearningPaths UserLearningPath[]
+
+  @@map("learning_paths")
+}
+
+model Track {
+  id             String  @id @default(uuid())
+  learningPathId String  @map("learning_path_id")
+  name           String
+  description    String? @db.Text
+  order          Int     // Order within learning path
+  isOptional     Boolean @default(false) @map("is_optional")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  learningPath LearningPath  @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+  trackLessons TrackLesson[]
+
+  @@index([learningPathId])
+  @@map("tracks")
+}
+
+// Junction table for Track-Lesson many-to-many
+// Allows one lesson to be reused across multiple tracks/paths
+model TrackLesson {
+  id       String @id @default(uuid())
+  trackId  String @map("track_id")
+  lessonId String @map("lesson_id")
+  order    Int    // Order within this track
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  track  Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([trackId, lessonId])
+  @@unique([trackId, order])
+  @@index([lessonId])
+  @@map("track_lessons")
+}
+
+model Lesson {
+  id            String  @id @default(uuid())
+  title         String
+  slug          String  @unique
+  summary       String  @db.Text // AI-generated or manually written summary
+  content       String? @db.Text // Extended markdown content
+  externalLinks Json    @default("[]") @map("external_links")
+  // Format: [{"title": "MDN Docs", "url": "https://...", "type": "documentation"}]
+  estimatedMins Int     @map("estimated_mins")
+  isPublished   Boolean @default(false) @map("is_published")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  trackLessons      TrackLesson[]
+  quiz              Quiz?
+  userProgress      UserProgress[]
+  learningSessions  LearningSession[]
+  aiInteractionLogs AIInteractionLog[]
+
+  // Prerequisites (self-referencing many-to-many)
+  prerequisites   LessonPrerequisite[] @relation("LessonToPrerequisites")
+  prerequisiteFor LessonPrerequisite[] @relation("PrerequisiteToLessons")
+
+  // Current lesson tracking
+  currentInPaths UserLearningPath[] @relation("CurrentLesson")
+
+  @@map("lessons")
+}
+
+// Junction table for Lesson prerequisites (DAG support)
+model LessonPrerequisite {
+  lessonId       String @map("lesson_id")
+  prerequisiteId String @map("prerequisite_id")
+
+  lesson       Lesson @relation("LessonToPrerequisites", fields: [lessonId], references: [id], onDelete: Cascade)
+  prerequisite Lesson @relation("PrerequisiteToLessons", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+
+  @@id([lessonId, prerequisiteId])
+  @@map("lesson_prerequisites")
+}
+
+// ============================================
+// QUIZ SYSTEM
+// ============================================
+
+model Quiz {
+  id            String @id @default(uuid())
+  lessonId      String @unique @map("lesson_id")
+  title         String
+  description   String? @db.Text
+  passThreshold Int    @default(70) @map("pass_threshold") // Percentage to pass
+  retryLimit    Int    @default(3) @map("retry_limit")     // Max attempts per day
+  retryCooldown Int    @default(60) @map("retry_cooldown") // Minutes between retries
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  lesson    Lesson         @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  questions QuizQuestion[]
+  results   QuizResult[]
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            String       @id @default(uuid())
+  quizId        String       @map("quiz_id")
+  questionText  String       @map("question_text") @db.Text
+  questionType  QuestionType @default(SINGLE_CHOICE) @map("question_type")
+  options       Json         // [{"id": "a", "text": "Option A"}, ...]
+  correctAnswer Json         @map("correct_answer") // ["a"] or ["a", "c"] for multiple
+  explanation   String?      @db.Text // Shown after answering
+  order         Int          // Question order in quiz
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@map("quiz_questions")
+}
+
+// ============================================
+// USER PROGRESS & TRACKING
+// ============================================
+
+model UserLearningPath {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  learningPathId   String    @map("learning_path_id")
+  currentLessonId  String?   @map("current_lesson_id")
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  aiRecommendations Json?    @map("ai_recommendations")
+  // AI-generated personalization: {"skipLessons": [], "focusAreas": [], ...}
+
+  // Relations
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learningPath  LearningPath @relation(fields: [learningPathId], references: [id], onDelete: Cascade)
+  currentLesson Lesson?      @relation("CurrentLesson", fields: [currentLessonId], references: [id])
+
+  @@unique([userId, learningPathId])
+  @@index([userId])
+  @@map("user_learning_paths")
+}
+
+model UserProgress {
+  id               String         @id @default(uuid())
+  userId           String         @map("user_id")
+  lessonId         String         @map("lesson_id")
+  status           ProgressStatus @default(NOT_STARTED)
+  startedAt        DateTime?      @map("started_at")
+  completedAt      DateTime?      @map("completed_at")
+  timeSpentSeconds Int            @default(0) @map("time_spent_seconds")
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId])
+  @@index([lessonId])
+  @@map("user_progress")
+}
+
+model QuizResult {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  quizId        String   @map("quiz_id")
+  score         Int      // Percentage 0-100
+  passed        Boolean
+  answers       Json     // [{"questionId": "...", "selected": ["a"], "correct": true}, ...]
+  attemptNumber Int      @map("attempt_number")
+  timeSpentSecs Int      @default(0) @map("time_spent_secs")
+  completedAt   DateTime @default(now()) @map("completed_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([quizId])
+  @@index([userId, quizId])
+  @@map("quiz_results")
+}
+
+model LearningSession {
+  id              String       @id @default(uuid())
+  userId          String       @map("user_id")
+  lessonId        String?      @map("lesson_id")
+  activityType    ActivityType @map("activity_type")
+  startedAt       DateTime     @default(now()) @map("started_at")
+  endedAt         DateTime?    @map("ended_at")
+  durationSeconds Int?         @map("duration_seconds")
+  metadata        Json?        // Additional tracking data
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id])
+
+  @@index([userId])
+  @@index([userId, startedAt])
+  @@map("learning_sessions")
+}
+
+// ============================================
+// AI INTERACTION
+// ============================================
+
+model AIInteractionLog {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  lessonId        String?  @map("lesson_id")
+  sessionContext  String   @map("session_context") // "lesson" | "track" | "path" | "general"
+  questionSummary String   @map("question_summary") @db.VarChar(500)
+  responseSummary String   @map("response_summary") @db.VarChar(500)
+  tokensUsed      Int      @map("tokens_used")
+  modelUsed       String   @map("model_used")
+  responseTimeMs  Int?     @map("response_time_ms")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson Lesson? @relation(fields: [lessonId], references: [id])
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("ai_interaction_logs")
+}
+
+// Track daily AI usage for rate limiting
+model AIUsageQuota {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  date      DateTime @db.Date // Date only, for daily tracking
+  usedCount Int      @default(0) @map("used_count")
+  maxCount  Int      @default(10) @map("max_count") // Free tier: 10/day
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("ai_usage_quotas")
+}

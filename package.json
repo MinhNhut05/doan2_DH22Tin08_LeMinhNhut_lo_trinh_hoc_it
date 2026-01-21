@@ -1,0 +1,11 @@
+{
+  "name": "devpath",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm run --parallel dev",
+    "build": "pnpm run --parallel build",
+    "lint": "pnpm run --parallel lint",
+    "test": "pnpm --filter backend test"
+  }
+}

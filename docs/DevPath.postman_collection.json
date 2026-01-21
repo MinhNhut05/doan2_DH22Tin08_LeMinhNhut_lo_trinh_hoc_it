@@ -1,0 +1,1167 @@
+{
+  "info": {
+    "_postman_id": "devpath-api-collection",
+    "name": "DevPath API",
+    "description": "API collection for DevPath - Personalized Learning Path System\n\nBase URL: {{baseUrl}}\n\nAuthentication: Bearer Token (JWT)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints",
+      "item": [
+        {
+          "name": "Request OTP",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@devpathlearn.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp/request",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "request"]
+            },
+            "description": "Request OTP code to be sent to email.\n\nRate limit: 5 requests per email per hour."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"message\": \"OTP sent to your email\",\n    \"expiresIn\": 120\n  }\n}"
+            },
+            {
+              "name": "Rate Limited",
+              "status": "Too Many Requests",
+              "code": 429,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Too many requests. Please try again in 15 minutes.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Verify OTP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "    pm.collectionVariables.set('refreshToken', jsonData.data.refreshToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@devpathlearn.com\",\n  \"code\": \"123456\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/otp/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "otp", "verify"]
+            },
+            "description": "Verify OTP code and receive JWT tokens.\n\nIf user doesn't exist, a new account is created."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n    \"user\": {\n      \"id\": \"uuid\",\n      \"email\": \"test@devpathlearn.com\",\n      \"role\": \"USER\",\n      \"createdAt\": \"2025-01-19T10:00:00Z\"\n    },\n    \"isNewUser\": false\n  }\n}"
+            },
+            {
+              "name": "Invalid OTP",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"INVALID_OTP\",\n    \"message\": \"Invalid or expired OTP code\",\n    \"remainingAttempts\": 4\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success && jsonData.data.accessToken) {",
+                  "    pm.collectionVariables.set('accessToken', jsonData.data.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Get new access token using refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Invalidate refresh token and logout."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user information."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"email\": \"test@devpathlearn.com\",\n    \"role\": \"USER\",\n    \"createdAt\": \"2025-01-19T10:00:00Z\",\n    \"onboardingCompleted\": true\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Onboarding",
+      "description": "Onboarding flow endpoints",
+      "item": [
+        {
+          "name": "Get Onboarding Questions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["onboarding", "questions"]
+            },
+            "description": "Get list of onboarding questions with options."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"questions\": [\n      {\n        \"id\": \"career_goal\",\n        \"type\": \"single_choice\",\n        \"question\": \"Bạn muốn trở thành?\",\n        \"options\": [\n          { \"value\": \"FRONTEND\", \"label\": \"Frontend Developer\" },\n          { \"value\": \"BACKEND\", \"label\": \"Backend Developer\" },\n          { \"value\": \"FULLSTACK\", \"label\": \"Fullstack Developer\" },\n          { \"value\": \"AI_PYTHON\", \"label\": \"AI/Python Developer\", \"disabled\": true }\n        ]\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Submit Onboarding Answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"careerGoal\": \"FRONTEND\",\n  \"priorKnowledge\": [\"html\", \"css\"],\n  \"learningBackground\": \"SELF_TAUGHT\",\n  \"hoursPerWeek\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["onboarding", "submit"]
+            },
+            "description": "Submit onboarding answers."
+          },
+          "response": []
+        },
+        {
+          "name": "Get AI Recommendation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/recommendation",
+              "host": ["{{baseUrl}}"],
+              "path": ["onboarding", "recommendation"]
+            },
+            "description": "Get AI-generated learning path recommendation based on onboarding answers."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"recommendedPath\": {\n      \"id\": \"uuid\",\n      \"name\": \"Frontend ReactJS Developer\",\n      \"slug\": \"frontend-reactjs\"\n    },\n    \"startingPoint\": {\n      \"lessonId\": \"uuid\",\n      \"lessonTitle\": \"JavaScript Basics\",\n      \"reason\": \"Bạn đã biết HTML và CSS\"\n    },\n    \"skippedLessons\": [\n      { \"title\": \"HTML Basics\", \"reason\": \"Đã có kiến thức\" },\n      { \"title\": \"CSS Fundamentals\", \"reason\": \"Đã có kiến thức\" }\n    ],\n    \"estimatedHours\": 80,\n    \"estimatedWeeks\": 8\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Confirm Learning Path",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"learningPathId\": \"uuid\",\n  \"startingLessonId\": \"uuid\",\n  \"skipLessonIds\": [\"uuid1\", \"uuid2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onboarding/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["onboarding", "confirm"]
+            },
+            "description": "Confirm and enroll in the selected learning path."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Learning Paths",
+      "description": "Learning path endpoints",
+      "item": [
+        {
+          "name": "List Learning Paths",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/learning-paths",
+              "host": ["{{baseUrl}}"],
+              "path": ["learning-paths"]
+            },
+            "description": "Get list of all published learning paths. No auth required."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"name\": \"Frontend ReactJS Developer\",\n      \"slug\": \"frontend-reactjs\",\n      \"description\": \"Lộ trình hoàn chỉnh...\",\n      \"icon\": \"react\",\n      \"difficulty\": \"beginner\",\n      \"estimatedHours\": 120,\n      \"totalLessons\": 20,\n      \"totalTracks\": 5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Learning Path Details",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/learning-paths/frontend-reactjs",
+              "host": ["{{baseUrl}}"],
+              "path": ["learning-paths", "frontend-reactjs"]
+            },
+            "description": "Get learning path details with tracks. No auth required."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"name\": \"Frontend ReactJS Developer\",\n    \"slug\": \"frontend-reactjs\",\n    \"description\": \"...\",\n    \"tracks\": [\n      {\n        \"id\": \"uuid\",\n        \"name\": \"Web Fundamentals\",\n        \"order\": 1,\n        \"isOptional\": false,\n        \"lessonCount\": 4\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Path Lessons",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/learning-paths/frontend-reactjs/lessons",
+              "host": ["{{baseUrl}}"],
+              "path": ["learning-paths", "frontend-reactjs", "lessons"]
+            },
+            "description": "Get all lessons in a learning path, grouped by track."
+          },
+          "response": []
+        },
+        {
+          "name": "Enroll in Path",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/learning-paths/frontend-reactjs/enroll",
+              "host": ["{{baseUrl}}"],
+              "path": ["learning-paths", "frontend-reactjs", "enroll"]
+            },
+            "description": "Enroll current user in a learning path."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Lessons",
+      "description": "Lesson endpoints",
+      "item": [
+        {
+          "name": "Get Lesson Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lessons/javascript-basics",
+              "host": ["{{baseUrl}}"],
+              "path": ["lessons", "javascript-basics"]
+            },
+            "description": "Get lesson details including content and external links."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"title\": \"JavaScript Basics\",\n    \"slug\": \"javascript-basics\",\n    \"summary\": \"# JavaScript Basics\\n\\nJavaScript là...\",\n    \"externalLinks\": [\n      {\n        \"title\": \"MDN JavaScript Guide\",\n        \"url\": \"https://developer.mozilla.org/...\",\n        \"type\": \"documentation\"\n      }\n    ],\n    \"estimatedMins\": 180,\n    \"hasQuiz\": true,\n    \"progress\": {\n      \"status\": \"IN_PROGRESS\",\n      \"timeSpentSeconds\": 3600\n    },\n    \"prerequisites\": [\n      { \"slug\": \"es6-features\", \"title\": \"ES6 Features\", \"completed\": true }\n    ],\n    \"nextLesson\": {\n      \"slug\": \"es6-features\",\n      \"title\": \"ES6 Features\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Start Lesson",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lessons/javascript-basics/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["lessons", "javascript-basics", "start"]
+            },
+            "description": "Mark lesson as started. Creates a learning session."
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Lesson",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lessons/javascript-basics/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["lessons", "javascript-basics", "complete"]
+            },
+            "description": "Mark lesson as completed. Requires passing quiz if lesson has one."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Lesson Quiz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/lessons/javascript-basics/quiz",
+              "host": ["{{baseUrl}}"],
+              "path": ["lessons", "javascript-basics", "quiz"]
+            },
+            "description": "Get quiz for a lesson."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Quizzes",
+      "description": "Quiz endpoints",
+      "item": [
+        {
+          "name": "Get Quiz",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/:quizId",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", ":quizId"],
+              "variable": [
+                {
+                  "key": "quizId",
+                  "value": "uuid"
+                }
+              ]
+            },
+            "description": "Get quiz with questions. Does not include correct answers."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\",\n    \"title\": \"JavaScript Basics Quiz\",\n    \"passThreshold\": 70,\n    \"retryLimit\": 3,\n    \"attemptsToday\": 1,\n    \"canAttempt\": true,\n    \"questions\": [\n      {\n        \"id\": \"uuid\",\n        \"questionText\": \"What is JavaScript?\",\n        \"questionType\": \"SINGLE_CHOICE\",\n        \"options\": [\n          { \"id\": \"a\", \"text\": \"Option A\" },\n          { \"id\": \"b\", \"text\": \"Option B\" }\n        ],\n        \"order\": 1\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Submit Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    { \"questionId\": \"uuid1\", \"selected\": [\"a\"] },\n    { \"questionId\": \"uuid2\", \"selected\": [\"b\", \"c\"] }\n  ],\n  \"timeSpentSecs\": 300\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/:quizId/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", ":quizId", "submit"],
+              "variable": [
+                {
+                  "key": "quizId",
+                  "value": "uuid"
+                }
+              ]
+            },
+            "description": "Submit quiz answers and get results."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"score\": 80,\n    \"passed\": true,\n    \"correctCount\": 8,\n    \"totalCount\": 10,\n    \"attemptNumber\": 1,\n    \"results\": [\n      {\n        \"questionId\": \"uuid\",\n        \"correct\": true,\n        \"correctAnswer\": [\"a\"],\n        \"explanation\": \"Explanation text...\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Quiz Results History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/:quizId/results",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", ":quizId", "results"],
+              "variable": [
+                {
+                  "key": "quizId",
+                  "value": "uuid"
+                }
+              ]
+            },
+            "description": "Get user's quiz attempt history."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Progress",
+      "description": "Progress tracking endpoints",
+      "item": [
+        {
+          "name": "Get Overall Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress"]
+            },
+            "description": "Get overall learning progress across all enrolled paths."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"enrolledPaths\": [\n      {\n        \"pathId\": \"uuid\",\n        \"pathName\": \"Frontend ReactJS\",\n        \"completedLessons\": 12,\n        \"totalLessons\": 20,\n        \"percentComplete\": 60,\n        \"currentLesson\": {\n          \"slug\": \"react-hooks\",\n          \"title\": \"React Hooks\"\n        }\n      }\n    ],\n    \"totalTimeSpent\": 36000,\n    \"quizzesCompleted\": 10,\n    \"averageQuizScore\": 78\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Path Progress",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/path/:pathId",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "path", ":pathId"],
+              "variable": [
+                {
+                  "key": "pathId",
+                  "value": "uuid"
+                }
+              ]
+            },
+            "description": "Get detailed progress for a specific learning path."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Activity Data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/activity?days=30",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "activity"],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            },
+            "description": "Get activity data for contribution graph."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"activities\": [\n      {\n        \"date\": \"2025-01-19\",\n        \"totalSeconds\": 3600,\n        \"lessonsCompleted\": 1,\n        \"quizzesTaken\": 1,\n        \"intensity\": 3\n      }\n    ],\n    \"summary\": {\n      \"totalDays\": 30,\n      \"activeDays\": 22,\n      \"totalHours\": 45,\n      \"streak\": 5\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Start Learning Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lessonId\": \"uuid\",\n  \"activityType\": \"LESSON_VIEW\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/progress/session/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "session", "start"]
+            },
+            "description": "Start a new learning session for tracking."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"sessionId\": \"uuid\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "End Learning Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"uuid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/progress/session/end",
+              "host": ["{{baseUrl}}"],
+              "path": ["progress", "session", "end"]
+            },
+            "description": "End a learning session. Duration is calculated automatically."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Chat",
+      "description": "AI chatbot endpoints",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Arrow function khác gì regular function?\",\n  \"context\": {\n    \"lessonId\": \"uuid\",\n    \"scope\": \"lesson\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "chat"]
+            },
+            "description": "Send a message to AI chatbot.\n\nScope options:\n- lesson: Only answer about current lesson\n- track: Answer about current track\n- path: Answer about entire learning path\n- general: General programming questions"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"response\": \"Arrow function trong ES6 có một số điểm khác biệt so với regular function:\\n\\n1. **Không có `this` riêng**...\\n\",\n    \"tokensUsed\": 250,\n    \"remainingQuota\": 9\n  }\n}"
+            },
+            {
+              "name": "Quota Exceeded",
+              "status": "Too Many Requests",
+              "code": 429,
+              "body": "{\n  \"success\": false,\n  \"error\": {\n    \"code\": \"AI_QUOTA_EXCEEDED\",\n    \"message\": \"Bạn đã hết lượt hỏi AI hôm nay. Vui lòng quay lại ngày mai.\",\n    \"resetAt\": \"2025-01-20T00:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Chat History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/chat/history?lessonId=uuid&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "chat", "history"],
+              "query": [
+                {
+                  "key": "lessonId",
+                  "value": "uuid"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get chat history for a lesson."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Remaining Quota",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/chat/remaining",
+              "host": ["{{baseUrl}}"],
+              "path": ["ai", "chat", "remaining"]
+            },
+            "description": "Get remaining daily AI chat quota."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"used\": 3,\n    \"max\": 10,\n    \"remaining\": 7,\n    \"resetAt\": \"2025-01-20T00:00:00Z\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Admin panel endpoints (requires ADMIN role)",
+      "item": [
+        {
+          "name": "Learning Paths",
+          "item": [
+            {
+              "name": "List All Paths (Admin)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/learning-paths",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "learning-paths"]
+                },
+                "description": "List all learning paths including unpublished."
+              },
+              "response": []
+            },
+            {
+              "name": "Create Learning Path",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Backend NodeJS Developer\",\n  \"slug\": \"backend-nodejs\",\n  \"description\": \"Lộ trình Backend với Node.js và Express\",\n  \"icon\": \"nodejs\",\n  \"difficulty\": \"beginner\",\n  \"estimatedHours\": 100\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/learning-paths",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "learning-paths"]
+                },
+                "description": "Create a new learning path."
+              },
+              "response": []
+            },
+            {
+              "name": "Update Learning Path",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Backend NodeJS Developer (Updated)\",\n  \"isPublished\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/learning-paths/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "learning-paths", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                },
+                "description": "Update a learning path."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Learning Path",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/learning-paths/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "learning-paths", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                },
+                "description": "Delete a learning path."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Tracks",
+          "item": [
+            {
+              "name": "Create Track",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"learningPathId\": \"uuid\",\n  \"name\": \"Node.js Fundamentals\",\n  \"description\": \"Core Node.js concepts\",\n  \"order\": 1,\n  \"isOptional\": false\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/tracks",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "tracks"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Track",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Updated Track Name\",\n  \"order\": 2\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/tracks/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "tracks", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Track",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/tracks/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "tracks", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Lessons",
+          "item": [
+            {
+              "name": "Create Lesson",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"New Lesson\",\n  \"slug\": \"new-lesson\",\n  \"summary\": \"# New Lesson\\n\\nLesson summary in markdown...\",\n  \"externalLinks\": [\n    {\n      \"title\": \"MDN Docs\",\n      \"url\": \"https://developer.mozilla.org/\",\n      \"type\": \"documentation\"\n    }\n  ],\n  \"estimatedMins\": 60,\n  \"trackId\": \"uuid\",\n  \"order\": 1\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/lessons",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "lessons"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Lesson",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"title\": \"Updated Lesson Title\",\n  \"summary\": \"Updated summary...\",\n  \"isPublished\": true\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/lessons/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "lessons", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Lesson",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/lessons/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "lessons", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Generate Summary with AI",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"topic\": \"React Hooks\",\n  \"keyPoints\": [\"useState\", \"useEffect\", \"custom hooks\"],\n  \"targetAudience\": \"beginner\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/lessons/generate-summary",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "lessons", "generate-summary"]
+                },
+                "description": "Use AI to generate lesson summary draft."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Quizzes",
+          "item": [
+            {
+              "name": "Create Quiz",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"lessonId\": \"uuid\",\n  \"title\": \"React Hooks Quiz\",\n  \"description\": \"Test your knowledge of React Hooks\",\n  \"passThreshold\": 70,\n  \"retryLimit\": 3,\n  \"questions\": [\n    {\n      \"questionText\": \"What hook is used for side effects?\",\n      \"questionType\": \"SINGLE_CHOICE\",\n      \"options\": [\n        { \"id\": \"a\", \"text\": \"useState\" },\n        { \"id\": \"b\", \"text\": \"useEffect\" },\n        { \"id\": \"c\", \"text\": \"useContext\" }\n      ],\n      \"correctAnswer\": [\"b\"],\n      \"explanation\": \"useEffect is used for side effects like data fetching, subscriptions, etc.\",\n      \"order\": 1\n    }\n  ]\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/quizzes",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "quizzes"]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Update Quiz",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"passThreshold\": 75,\n  \"retryLimit\": 5\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/admin/quizzes/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "quizzes", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Delete Quiz",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/quizzes/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "quizzes", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "List Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users?page=1&limit=20",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users"],
+                  "query": [
+                    {
+                      "key": "page",
+                      "value": "1"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "20"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Get User Details",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/users/:id",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "users", ":id"],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": "uuid"
+                    }
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Analytics",
+          "item": [
+            {
+              "name": "Get Dashboard Analytics",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/admin/analytics",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["admin", "analytics"]
+                }
+              },
+              "response": [
+                {
+                  "name": "Success",
+                  "status": "OK",
+                  "code": 200,
+                  "body": "{\n  \"success\": true,\n  \"data\": {\n    \"totalUsers\": 1234,\n    \"activeUsersToday\": 56,\n    \"totalLessons\": 45,\n    \"totalQuizzes\": 42,\n    \"averageQuizScore\": 75,\n    \"completionRate\": 0.45,\n    \"recentSignups\": [\n      { \"date\": \"2025-01-19\", \"count\": 12 }\n    ]\n  }\n}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
