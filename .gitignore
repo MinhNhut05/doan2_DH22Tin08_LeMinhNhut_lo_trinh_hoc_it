@@ -143,3 +143,13 @@ vite.config.ts.timestamp-*
 # ===========================================
 CLAUDE.md
 CONTEXT.md
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code CLI skills
+.agents/
+
+# Lockfiles (optional)
+pnpm-lock.yaml
