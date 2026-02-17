@@ -18,15 +18,15 @@ DevPath is a learning platform that helps Vietnamese IT learners find their pers
 | Frontend | React 18, Vite, TypeScript, Tailwind CSS, Zustand, React Query |
 | Backend | NestJS, TypeScript, Prisma ORM |
 | Database | PostgreSQL 16, Redis 7 |
-| AI | LangChain.js (OpenAI/Groq/Anthropic) |
+| AI | Anthropic-compatible API via manager.devteamos.me |
 | Infrastructure | Docker, Vercel, VPS with Nginx |
 
 ## Getting Started
 
 ```bash
 # Clone and install dependencies
-git clone https://github.com/your-username/devpath-learning.git
-cd devpath-learning
+git clone https://github.com/MinhNhut05/path-learn.git
+cd path-learn
 pnpm install
 
 # Start with Docker (recommended)
@@ -39,9 +39,10 @@ cd frontend && pnpm run dev        # Frontend on :5173
 
 ## Documentation
 
-- [Technical Context](./CONTEXT.md) - Full technical specification
-- [Wireframes](./docs/WIREFRAMES.md) - UI/UX designs
+- [Technical Specification](./context/) - Full technical spec (12 topic files)
+- [Branch Plans](./branches/) - Context, progress, and TODO for each branch
 - [Progress Tracking](./TRACKPAD.md) - Learning progress log
+- [Infrastructure](./INFRASTRUCTURE.md) - Production infrastructure summary
 
 ## Author
 

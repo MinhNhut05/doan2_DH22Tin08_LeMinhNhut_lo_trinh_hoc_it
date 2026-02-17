@@ -53,8 +53,8 @@ services:
   # ===========================================
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
       target: development
     container_name: devpath-backend
     restart: unless-stopped
@@ -93,8 +93,8 @@ services:
   # ===========================================
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: development
     container_name: devpath-frontend
     restart: unless-stopped
