@@ -1,11 +1,12 @@
 # ===========================================
-# Frontend Dockerfile (React + Vite)
+# Frontend Dockerfile (React + Vite) - Monorepo Support
 # ===========================================
 
 # Base image
 FROM node:20-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache libc6-compat
+RUN corepack enable
 
 # ===========================================
 # Development stage
@@ -13,12 +14,16 @@ RUN apk add --no-cache libc6-compat
 FROM base AS development
 ENV NODE_ENV=development
 
-# Install dependencies
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+# Copy workspace config and lock file from root
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/
+
+# Install dependencies for frontend only
+WORKDIR /app/frontend
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY frontend/ .
 
 # Expose Vite dev server port
 EXPOSE 5173
@@ -30,13 +35,18 @@ CMD ["pnpm", "run", "dev", "--", "--host"]
 # Build stage
 # ===========================================
 FROM base AS builder
+WORKDIR /app
+
+# Copy workspace config and lock file
+COPY pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY frontend/package.json ./frontend/
 
 # Install dependencies
-COPY package.json pnpm-lock.yaml ./
-RUN corepack enable && pnpm install --frozen-lockfile
+WORKDIR /app/frontend
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY . .
+COPY frontend/ .
 
 # Build arguments for environment variables
 ARG VITE_API_URL
@@ -55,10 +65,10 @@ RUN pnpm run build
 FROM nginx:alpine AS production
 
 # Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
+COPY --from=builder /app/frontend/dist /usr/share/nginx/html
 
 # Add non-root user
 RUN chown -R nginx:nginx /usr/share/nginx/html && \

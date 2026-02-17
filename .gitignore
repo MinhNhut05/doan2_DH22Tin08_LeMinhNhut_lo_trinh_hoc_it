@@ -144,6 +144,7 @@ vite.config.ts.timestamp-*
 CLAUDE.md
 CONTEXT.md
 INFRASTRUCTURE.md
+branches/
 
 # IDE
 .vscode/
