@@ -31,9 +31,9 @@ function Alert({ type, msg }: { type: 'error' | 'success' | 'info'; msg: string 
 function Divider() {
   return (
     <div className="flex items-center my-5 gap-3">
-      <div className="flex-1 h-px bg-gray-200" />
-      <span className="text-xs text-gray-400 whitespace-nowrap">hoặc</span>
-      <div className="flex-1 h-px bg-gray-200" />
+      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+      <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">hoặc</span>
+      <div className="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
     </div>
   );
 }
@@ -45,7 +45,7 @@ function OAuthButtons() {
       <button
         type="button"
         onClick={() => (window.location.href = `${API_URL}/auth/google`)}
-        className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-center gap-3 border border-gray-300 dark:border-gray-600 rounded-lg py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
         {/* Google "G" icon SVG */}
         <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -72,7 +72,7 @@ function OAuthButtons() {
       <button
         type="button"
         onClick={() => (window.location.href = `${API_URL}/auth/github`)}
-        className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-center gap-3 border border-gray-300 dark:border-gray-600 rounded-lg py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
       >
         {/* GitHub icon SVG */}
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -106,7 +106,7 @@ function PasswordInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required
-        className="w-full border rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 pr-11 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
       />
       <button
         type="button"
@@ -311,24 +311,24 @@ export default function AuthPage() {
   // RENDER
   // ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-10">
-      <div className="bg-white rounded-2xl shadow-md w-full max-w-sm p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-10">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md dark:shadow-gray-900/30 w-full max-w-sm p-8">
 
         {/* Logo + subtitle */}
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-blue-600 tracking-tight">DevPath</h1>
-          <p className="text-gray-500 text-sm mt-1">Lộ trình học IT cá nhân hóa</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Lộ trình học IT cá nhân hóa</p>
         </div>
 
         {/* Tab buttons */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-6">
           <button
             type="button"
             onClick={() => handleSwitchTab('login')}
             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
               activeTab === 'login'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             Đăng nhập
@@ -339,7 +339,7 @@ export default function AuthPage() {
             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
               activeTab === 'register'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
             }`}
           >
             Đăng ký
@@ -361,7 +361,7 @@ export default function AuthPage() {
                     value={loginEmail}
                     onChange={(e) => setLoginEmail(e.target.value)}
                     required
-                    className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
 
                   <PasswordInput
@@ -405,7 +405,7 @@ export default function AuthPage() {
                   >
                     ←
                   </button>
-                  <h2 className="font-semibold text-gray-800 text-sm">Quên mật khẩu</h2>
+                  <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Quên mật khẩu</h2>
                 </div>
 
                 {forgotError && <Alert type="error" msg={forgotError} />}
@@ -414,7 +414,7 @@ export default function AuthPage() {
                 {/* Step 1: Nhập email */}
                 {forgotStep === 'email' && (
                   <form onSubmit={handleForgotEmail} className="space-y-4">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Nhập email của bạn để nhận mã OTP đặt lại mật khẩu.
                     </p>
                     <input
@@ -423,8 +423,8 @@ export default function AuthPage() {
                       value={forgotEmail}
                       onChange={(e) => setForgotEmail(e.target.value)}
                       required
-                      className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                      />
                     <button
                       type="submit"
                       disabled={forgotLoading}
@@ -438,7 +438,7 @@ export default function AuthPage() {
                 {/* Step 2: Nhập OTP */}
                 {forgotStep === 'otp' && (
                   <div className="space-y-4">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       Nhập mã 6 chữ số đã gửi đến <strong>{forgotEmail}</strong>
                     </p>
                     <input
@@ -447,7 +447,7 @@ export default function AuthPage() {
                       value={forgotCode}
                       onChange={(e) => setForgotCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       maxLength={6}
-                      className="w-full border rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                     <button
                       type="button"
@@ -466,7 +466,7 @@ export default function AuthPage() {
                 {/* Step 3: Đặt mật khẩu mới */}
                 {forgotStep === 'new-password' && (
                   <form onSubmit={handleResetPassword} className="space-y-4">
-                    <p className="text-sm text-gray-500">Nhập mật khẩu mới của bạn.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Nhập mật khẩu mới của bạn.</p>
                     <PasswordInput
                       value={forgotNewPassword}
                       onChange={setForgotNewPassword}
@@ -480,7 +480,7 @@ export default function AuthPage() {
                       value={forgotConfirmPassword}
                       onChange={(e) => setForgotConfirmPassword(e.target.value)}
                       required
-                      className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     />
                     <button
                       type="submit"
@@ -496,8 +496,8 @@ export default function AuthPage() {
                 {forgotStep === 'done' && (
                   <div className="text-center space-y-4">
                     <div className="text-5xl">✅</div>
-                    <p className="text-gray-700 font-medium">Đổi mật khẩu thành công!</p>
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-gray-700 dark:text-gray-200 font-medium">Đổi mật khẩu thành công!</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">
                       Bạn có thể đăng nhập với mật khẩu mới.
                     </p>
                     <button
@@ -530,7 +530,7 @@ export default function AuthPage() {
                     value={regDisplayName}
                     onChange={(e) => setRegDisplayName(e.target.value)}
                     required
-                    className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                   <input
                     type="email"
@@ -538,7 +538,7 @@ export default function AuthPage() {
                     value={regEmail}
                     onChange={(e) => setRegEmail(e.target.value)}
                     required
-                    className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                   <PasswordInput
                     value={regPassword}
@@ -553,7 +553,7 @@ export default function AuthPage() {
                     value={regConfirmPassword}
                     onChange={(e) => setRegConfirmPassword(e.target.value)}
                     required
-                    className="w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                   <button
                     type="submit"
@@ -572,7 +572,7 @@ export default function AuthPage() {
             {/* ─── Step 2: Nhập OTP xác thực email ─── */}
             {registerStep === 'verify-otp' && (
               <div className="space-y-4">
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Nhập mã 6 chữ số đã gửi đến <strong>{storedRegEmail}</strong>
                 </p>
                 <form onSubmit={handleVerifyRegOtp} className="space-y-4">
@@ -582,7 +582,7 @@ export default function AuthPage() {
                     value={regOtpCode}
                     onChange={(e) => setRegOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                     maxLength={6}
-                    className="w-full border rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-lg px-4 py-2.5 text-center text-lg font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                   />
                   <button
                     type="submit"
@@ -610,7 +610,7 @@ export default function AuthPage() {
                     setRegError('');
                     setRegInfo('');
                   }}
-                  className="w-full text-sm text-gray-500 hover:text-gray-700"
+                  className="w-full text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 >
                   ← Quay lại
                 </button>

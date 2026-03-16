@@ -4,3 +4,4 @@
 // Re-export SlugParamDto từ learning-paths để dùng chung
 // Tránh duplicate code — 1 DTO, 2 modules dùng
 export { SlugParamDto } from '../../learning-paths/dto/slug-param.dto.js';
+export { SubmitQuizDto } from './submit-quiz.dto.js';

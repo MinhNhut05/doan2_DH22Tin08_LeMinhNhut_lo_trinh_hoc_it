@@ -119,22 +119,22 @@ export default function AiChat() {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <p className="text-gray-400">Đang tải...</p>
+      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-400 dark:text-gray-500">Đang tải...</p>
       </div>
     );
   }
 
   // ── Main render ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0 shadow-sm">
+      <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm dark:shadow-gray-900/20">
         {/* Nút quay lại */}
         <Link
           to="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
         >
           <ArrowLeft size={16} />
           Dashboard
@@ -142,13 +142,13 @@ export default function AiChat() {
 
         {/* Tiêu đề */}
         <div className="flex items-center gap-2">
-          <Bot size={18} className="text-purple-600" />
-          <span className="font-semibold text-gray-800">Trợ lý AI</span>
+          <Bot size={18} className="text-purple-600 dark:text-purple-400" />
+          <span className="font-semibold text-gray-800 dark:text-gray-100">Trợ lý AI</span>
         </div>
 
         {/* Quota badge */}
         {quota !== null && (
-          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-100 text-purple-700">
+          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
             {quota.remaining} câu còn lại
           </span>
         )}
@@ -174,11 +174,11 @@ export default function AiChat() {
         {/* Empty state — chưa có tin nhắn nào */}
         {messages.length === 0 && !sending && (
           <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-            <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center">
-              <Bot size={28} className="text-purple-600" />
+            <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+              <Bot size={28} className="text-purple-600 dark:text-purple-400" />
             </div>
-            <p className="font-semibold text-gray-700">Xin chào! Mình có thể giúp gì cho bạn?</p>
-            <p className="text-sm text-gray-400 max-w-xs">
+            <p className="font-semibold text-gray-700 dark:text-gray-200">Xin chào! Mình có thể giúp gì cho bạn?</p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
               Hỏi bất kỳ câu hỏi nào về lập trình, lộ trình học, hoặc bài tập nhé.
             </p>
           </div>
@@ -202,7 +202,7 @@ export default function AiChat() {
             // ── AI bubble (trái) ──
             <div key={msg.id} className="flex justify-start">
               <div className="max-w-[80%]">
-                <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-4 py-2.5 text-sm leading-relaxed shadow-sm whitespace-pre-wrap">
+                <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-bl-none px-4 py-2.5 text-sm leading-relaxed shadow-sm dark:shadow-gray-900/20 whitespace-pre-wrap text-gray-800 dark:text-gray-100">
                   {msg.content}
                 </div>
                 {msg.createdAt && (
@@ -216,12 +216,12 @@ export default function AiChat() {
         {/* Typing indicator — AI đang trả lời */}
         {sending && (
           <div className="flex justify-start">
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
-              <span className="text-gray-500 text-sm">AI đang suy nghĩ</span>
+            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
+              <span className="text-gray-500 dark:text-gray-400 text-sm">AI đang suy nghĩ</span>
               <span className="inline-flex gap-1">
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
               </span>
             </div>
           </div>
@@ -232,7 +232,7 @@ export default function AiChat() {
       </div>
 
       {/* ── Input area (cố định dưới) ────────────────────────────────────────── */}
-      <div className="bg-white border-t px-4 py-3 shrink-0">
+      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-3 shrink-0">
         <div className="flex gap-2 max-w-xl mx-auto">
           <textarea
             ref={textareaRef}
@@ -246,10 +246,10 @@ export default function AiChat() {
                 : 'Nhập câu hỏi... (Enter để gửi, Shift+Enter xuống dòng)'
             }
             disabled={quota?.remaining === 0 || sending}
-            className="flex-1 resize-none rounded-xl border border-gray-200 px-3.5 py-2.5 text-sm
+            className="flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3.5 py-2.5 text-sm
               focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent
-              disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed
-              placeholder:text-gray-400"
+              disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed
+              placeholder:text-gray-400 dark:placeholder:text-gray-500"
           />
 
           <button
@@ -265,7 +265,7 @@ export default function AiChat() {
         </div>
 
         {/* Hint text */}
-        <p className="text-center text-xs text-gray-400 mt-1.5">
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1.5">
           AI có thể mắc lỗi. Hãy kiểm tra lại thông tin quan trọng.
         </p>
       </div>

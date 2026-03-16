@@ -112,20 +112,20 @@ export default function Onboarding() {
   // ── Render: Questions ─────────────────────────────────────────────────────
   if (step === 'questions') {
     return (
-      <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
         <div className="max-w-xl mx-auto">
-          <h1 className="text-2xl font-bold mb-1">Thiết lập hành trình học</h1>
-          <p className="text-gray-500 text-sm mb-8">Trả lời {questions.length} câu hỏi để AI gợi ý lộ trình phù hợp</p>
+          <h1 className="text-2xl font-bold mb-1 text-gray-800 dark:text-gray-100">Thiết lập hành trình học</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mb-8">Trả lời {questions.length} câu hỏi để AI gợi ý lộ trình phù hợp</p>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 rounded p-3 text-sm mb-4">{error}</div>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded p-3 text-sm mb-4">{error}</div>
           )}
 
           <div className="space-y-6">
             {questions.map((q, idx) => (
-              <div key={q.id} className="bg-white rounded-xl shadow-sm p-5">
-                <p className="font-medium mb-3">
-                  <span className="text-blue-600 mr-2">{idx + 1}.</span>{q.question}
+              <div key={q.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-5">
+                <p className="font-medium mb-3 text-gray-800 dark:text-gray-100">
+                  <span className="text-blue-600 dark:text-blue-400 mr-2">{idx + 1}.</span>{q.question}
                 </p>
                 <div className="space-y-2">
                   {q.options.map((opt) => {
@@ -140,7 +140,7 @@ export default function Onboarding() {
                         className={`w-full text-left px-4 py-2.5 rounded-lg border text-sm transition-colors ${
                           selected
                             ? 'bg-blue-600 border-blue-600 text-white'
-                            : 'bg-white border-gray-200 hover:border-blue-400 text-gray-700'
+                            : 'bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 hover:border-blue-400 text-gray-700 dark:text-gray-200'
                         }`}
                       >
                         {opt.label}
@@ -168,29 +168,29 @@ export default function Onboarding() {
   if (step === 'recommendation' && recommendation) {
     const pathDisplayName = PATH_NAMES[recommendation.primaryPath] ?? recommendation.primaryPath;
     return (
-      <div className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
         <div className="max-w-xl mx-auto">
           <div className="flex items-center gap-2 mb-6">
-            <span className="text-2xl font-bold">Gợi ý của AI</span>
+            <span className="text-2xl font-bold text-gray-800 dark:text-gray-100">Gợi ý của AI</span>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               recommendation.source === 'ai'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
             }`}>
               {recommendation.source === 'ai' ? '✨ AI' : '📋 Fallback'}
             </span>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-6 mb-4">
-            <h2 className="font-semibold text-lg mb-1">{pathDisplayName}</h2>
-            <p className="text-gray-500 text-sm mb-4">{recommendation.reason}</p>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-6 mb-4">
+            <h2 className="font-semibold text-lg mb-1 text-gray-800 dark:text-gray-100">{pathDisplayName}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{recommendation.reason}</p>
 
             {recommendation.alternativePaths.length > 0 && (
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Lộ trình thay thế:</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Lộ trình thay thế:</p>
                 <div className="flex flex-wrap gap-2">
                   {recommendation.alternativePaths.map((slug) => (
-                    <span key={slug} className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded-full">
+                    <span key={slug} className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-2 py-1 rounded-full">
                       {PATH_NAMES[slug] ?? slug}
                     </span>
                   ))}
@@ -200,10 +200,10 @@ export default function Onboarding() {
 
             {recommendation.focusAreas.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Chủ đề cần tập trung:</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Chủ đề cần tập trung:</p>
                 <div className="flex flex-wrap gap-2">
                   {recommendation.focusAreas.map((topic) => (
-                    <span key={topic} className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded-full">{topic}</span>
+                    <span key={topic} className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs px-2 py-1 rounded-full">{topic}</span>
                   ))}
                 </div>
               </div>
@@ -211,10 +211,10 @@ export default function Onboarding() {
 
             {recommendation.tips.length > 0 && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-gray-700 mb-2">Mẹo học tập:</p>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Mẹo học tập:</p>
                 <ul className="list-disc list-inside space-y-1">
                   {recommendation.tips.map((tip) => (
-                    <li key={tip} className="text-sm text-gray-600">{tip}</li>
+                    <li key={tip} className="text-sm text-gray-600 dark:text-gray-300">{tip}</li>
                   ))}
                 </ul>
               </div>
@@ -234,11 +234,11 @@ export default function Onboarding() {
 
   // Fallback: đang loading hoặc recommendation chưa ready
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
       <div className="text-center">
-        <p className="text-gray-500">Đang tải...</p>
+        <p className="text-gray-500 dark:text-gray-400">Đang tải...</p>
         {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-600 rounded p-3 text-sm">
+          <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded p-3 text-sm">
             {error}
           </div>
         )}

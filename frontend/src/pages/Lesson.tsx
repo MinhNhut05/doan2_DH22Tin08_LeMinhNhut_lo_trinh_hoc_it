@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
+import MarkdownContent from '../components/MarkdownContent';
 
 // ─── TypeScript Interfaces ────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ interface Lesson {
   summary: string;
   externalLinks: string; // JSON string, parse với try/catch
   estimatedMins: number;
+  quiz?: { id: string; title: string } | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,9 +150,7 @@ export default function Lesson() {
           </span>
 
           {/* Summary */}
-          <p className="text-gray-600 text-sm leading-relaxed whitespace-pre-wrap">
-            {lesson.summary}
-          </p>
+          <MarkdownContent content={lesson.summary} />
         </div>
 
         {/* ── External links section ───────────────────────────────────────── */}
@@ -222,6 +222,18 @@ export default function Lesson() {
             </div>
           )}
         </div>
+
+        {/* ── Quiz section ──────────────────────────────────────────────────── */}
+        {lesson.quiz && (
+          <div className="bg-white rounded-xl shadow-sm p-5">
+            <button
+              onClick={() => navigate(`/lesson/${slug}/quiz`)}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              📝 Làm Quiz: {lesson.quiz.title}
+            </button>
+          </div>
+        )}
 
       </div>
     </div>

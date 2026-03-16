@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import AiChat from './pages/AiChat';
 import Explore from './pages/Explore';
 import Lesson from './pages/Lesson';
+import Quiz from './pages/Quiz';
+import LessonLayout from './pages/LessonLayout';
 
 export default function App() {
   const token = useAuthStore((s) => s.accessToken);
@@ -23,7 +25,12 @@ export default function App() {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/ai-chat" element={<ProtectedRoute><AiChat /></ProtectedRoute>} />
       <Route path="/explore" element={<ProtectedRoute><Explore /></ProtectedRoute>} />
-      <Route path="/lesson/:slug" element={<ProtectedRoute><Lesson /></ProtectedRoute>} />
+      <Route path="/lesson/:slug/quiz" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
+      <Route path="/lesson/:slug" element={
+        <ProtectedRoute>
+          <LessonLayout><Lesson /></LessonLayout>
+        </ProtectedRoute>
+      } />
 
       {/* Default */}
       <Route path="*" element={<Navigate to={token ? '/dashboard' : '/login'} replace />} />

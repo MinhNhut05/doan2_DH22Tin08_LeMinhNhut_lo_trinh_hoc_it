@@ -268,15 +268,6 @@ export class LessonsService {
     const { lesson } = await this.validateLessonAccess(userId, slug);
 
     // ── Query UserProgress ─────────────────────────────────────────────────
-    //
-    // findUnique dùng compound unique key userId_lessonId
-    // Chỉ select 3 fields cần thiết cho frontend:
-    //   status: trạng thái hiện tại (NOT_STARTED | IN_PROGRESS | COMPLETED)
-    //   startedAt: thời điểm bắt đầu học
-    //   completedAt: thời điểm hoàn thành (null nếu chưa complete)
-    //
-    // Return null nếu user chưa bao giờ interact với lesson
-    // → Frontend hiển thị nút "Start Lesson"
     const userProgress = await this.prisma.userProgress.findUnique({
       where: {
         userId_lessonId: { userId, lessonId: lesson.id },
@@ -288,11 +279,18 @@ export class LessonsService {
       },
     });
 
-    // Spread lesson fields + attach userProgress
-    // userProgress: { status, startedAt, completedAt } | null
+    // ── Query Quiz existence ────────────────────────────────────────────────
+    // Chỉ lấy id + title để frontend biết lesson có quiz hay không
+    // → Hiển thị nút "Làm Quiz" nếu quiz tồn tại
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { lessonId: lesson.id },
+      select: { id: true, title: true },
+    });
+
     return {
       ...lesson,
       userProgress: userProgress ?? null,
+      quiz: quiz ?? null,
     };
   }
 
@@ -554,5 +552,137 @@ export class LessonsService {
         completedAt: new Date(),
       },
     });
+  }
+
+  // ── GET /lessons/:slug/quiz ─────────────────────────────────────────────
+
+  /**
+   * Lấy quiz + questions cho lesson (theo slug).
+   * Strip correctAnswer và explanation (security — chỉ trả sau khi submit).
+   *
+   * Flow:
+   *   1. Validate lesson access (enrollment + prerequisites)
+   *   2. Query quiz kèm questions (orderBy order asc)
+   *   3. Strip correctAnswer, explanation khỏi mỗi question
+   *   4. Return quiz data hoặc throw 404 nếu lesson không có quiz
+   */
+  async getQuizByLessonSlug(userId: string, slug: string) {
+    const { lesson } = await this.validateLessonAccess(userId, slug);
+
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { lessonId: lesson.id },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('This lesson does not have a quiz');
+    }
+
+    // Strip correctAnswer + explanation → security
+    const safeQuestions = quiz.questions.map(
+      ({ correctAnswer: _ca, explanation: _ex, ...q }) => q,
+    );
+
+    return {
+      id: quiz.id,
+      title: quiz.title,
+      description: quiz.description,
+      passThreshold: quiz.passThreshold,
+      retryLimit: quiz.retryLimit,
+      questions: safeQuestions,
+    };
+  }
+
+  // ── POST /lessons/:slug/quiz/submit ─────────────────────────────────────
+
+  /**
+   * Grade quiz submission server-side.
+   *
+   * Flow:
+   *   1. Validate lesson access
+   *   2. Fetch quiz + questions (kèm correctAnswer)
+   *   3. So sánh answers từng câu
+   *   4. Tính score = (correctCount / total) * 100
+   *   5. Check pass = score >= passThreshold
+   *   6. Lưu QuizResult record
+   *   7. Return result kèm explanation cho từng câu
+   */
+  async submitQuiz(
+    userId: string,
+    slug: string,
+    answers: Record<string, string[]>,
+  ) {
+    const { lesson } = await this.validateLessonAccess(userId, slug);
+
+    const quiz = await this.prisma.quiz.findUnique({
+      where: { lessonId: lesson.id },
+      include: {
+        questions: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('This lesson does not have a quiz');
+    }
+
+    // ── Grade từng câu ──────────────────────────────────────────────────
+    let correctCount = 0;
+    const gradedAnswers = quiz.questions.map((question) => {
+      const selected = answers[question.id] ?? [];
+      const correct = question.correctAnswer as string[];
+
+      // So sánh: sort cả 2 arrays rồi compare
+      const isCorrect =
+        selected.length === correct.length &&
+        [...selected].sort().every((v, i) => v === [...correct].sort()[i]);
+
+      if (isCorrect) correctCount++;
+
+      return {
+        questionId: question.id,
+        selected,
+        correct,
+        isCorrect,
+        explanation: question.explanation,
+      };
+    });
+
+    const totalQuestions = quiz.questions.length;
+    const score = totalQuestions > 0
+      ? Math.round((correctCount / totalQuestions) * 100)
+      : 0;
+    const passed = score >= quiz.passThreshold;
+
+    // ── Tính attemptNumber ──────────────────────────────────────────────
+    const previousAttempts = await this.prisma.quizResult.count({
+      where: { userId, quizId: quiz.id },
+    });
+
+    // ── Lưu QuizResult ──────────────────────────────────────────────────
+    await this.prisma.quizResult.create({
+      data: {
+        userId,
+        quizId: quiz.id,
+        score,
+        passed,
+        answers: gradedAnswers.map(({ explanation: _e, ...a }) => a),
+        attemptNumber: previousAttempts + 1,
+      },
+    });
+
+    return {
+      score,
+      passed,
+      totalQuestions,
+      correctCount,
+      passThreshold: quiz.passThreshold,
+      answers: gradedAnswers,
+    };
   }
 }

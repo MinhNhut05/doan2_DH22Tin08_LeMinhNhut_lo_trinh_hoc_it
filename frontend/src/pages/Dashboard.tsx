@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Flame, Clock, BookOpen, MessageSquare, LogOut } from 'lucide-react';
 import api from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import ThemeToggle from '../components/ThemeToggle';
 
 // ─── TypeScript Interfaces ────────────────────────────────────────────────────
 
@@ -99,8 +100,8 @@ export default function Dashboard() {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-400">Đang tải...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <p className="text-gray-400 dark:text-gray-500">Đang tải...</p>
       </div>
     );
   }
@@ -112,24 +113,24 @@ export default function Dashboard() {
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-10 px-4">
       <div className="max-w-xl mx-auto space-y-6">
 
         {/* ── Section 1: Header ──────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl shadow-sm p-5">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-5">
           <div className="flex items-center justify-between">
             {/* Avatar + tên + tier badge */}
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-lg shrink-0">
+              <div className="w-11 h-11 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold text-lg shrink-0">
                 {avatarLetter}
               </div>
               <div>
-                <p className="font-semibold text-gray-800">{user.displayName}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-100">{user.displayName}</p>
                 <span
                   className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     user.tier === 'Pro'
-                      ? 'bg-purple-100 text-purple-700'
-                      : 'bg-green-100 text-green-700'
+                      ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                      : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                   }`}
                 >
                   {user.tier}
@@ -137,44 +138,47 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Nút đăng xuất */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
-            >
-              <LogOut size={15} />
-              Đăng xuất
-            </button>
+            {/* ThemeToggle + Nút đăng xuất */}
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+              >
+                <LogOut size={15} />
+                Đăng xuất
+              </button>
+            </div>
           </div>
         </div>
 
         {/* ── Section 2: Enrolled Learning Paths ────────────────────────── */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 px-1">
             Lộ trình đang học
           </h2>
 
           {enrolledPaths.length > 0 ? (
             <div className="space-y-3">
               {enrolledPaths.map((path) => (
-                <div key={path.id} className="bg-white rounded-xl shadow-sm p-5">
-                  <p className="font-semibold text-gray-800 mb-3">{path.name}</p>
+                <div key={path.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-5">
+                  <p className="font-semibold text-gray-800 dark:text-gray-100 mb-3">{path.name}</p>
 
                   {/* Progress bar */}
-                  <div className="w-full bg-gray-100 rounded-full h-2 mb-2">
+                  <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2 mb-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full transition-all"
                       style={{ width: `${path.progress}%` }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                    <span>Bài hiện tại: <span className="text-gray-700">{path.currentLesson?.title ?? 'Chưa bắt đầu'}</span></span>
-                    <span className="font-medium text-blue-600">{path.progress}% hoàn thành</span>
+                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    <span>Bài hiện tại: <span className="text-gray-700 dark:text-gray-300">{path.currentLesson?.title ?? 'Chưa bắt đầu'}</span></span>
+                    <span className="font-medium text-blue-600 dark:text-blue-400">{path.progress}% hoàn thành</span>
                   </div>
 
                   <button
-                    onClick={() => { if (path.currentLesson?.slug) navigate(`/lesson/${path.currentLesson.slug}`); }}
+                    onClick={() => { if (path.currentLesson?.slug) navigate(`/lesson/${path.currentLesson.slug}?path=${path.slug}`); }}
                     disabled={!path.currentLesson}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
@@ -186,16 +190,16 @@ export default function Dashboard() {
               {/* Link khám phá thêm — luôn hiện dù đã có lộ trình */}
               <button
                 onClick={() => navigate('/explore')}
-                className="w-full border-2 border-dashed border-gray-200 hover:border-blue-400 text-gray-500 hover:text-blue-600 text-sm font-medium py-3 rounded-xl transition-colors"
+                className="w-full border-2 border-dashed border-gray-200 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm font-medium py-3 rounded-xl transition-colors"
               >
                 + Khám phá thêm lộ trình
               </button>
             </div>
           ) : (
             /* Empty state CTA */
-            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-              <p className="text-gray-500 text-sm mb-1">Chưa có lộ trình nào</p>
-              <p className="text-gray-400 text-xs mb-4">Hãy khám phá và chọn lộ trình phù hợp với bạn</p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-6 text-center">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">Chưa có lộ trình nào</p>
+              <p className="text-gray-400 dark:text-gray-500 text-xs mb-4">Hãy khám phá và chọn lộ trình phù hợp với bạn</p>
               <button
                 onClick={() => navigate('/explore')}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition-colors"
@@ -208,49 +212,49 @@ export default function Dashboard() {
 
         {/* ── Section 3: Activity Summary ───────────────────────────────── */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 px-1">
             Hoạt động của bạn
           </h2>
 
           <div className="grid grid-cols-3 gap-3">
             {/* Streak */}
-            <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-4 flex flex-col items-center gap-2">
               <Flame size={20} className="text-orange-500" />
-              <p className="text-xl font-bold text-gray-800">{recentActivity.currentStreak}</p>
-              <p className="text-xs text-gray-500 text-center leading-tight">Chuỗi ngày học</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{recentActivity.currentStreak}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center leading-tight">Chuỗi ngày học</p>
             </div>
 
             {/* Weekly minutes */}
-            <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-4 flex flex-col items-center gap-2">
               <Clock size={20} className="text-blue-500" />
-              <p className="text-xl font-bold text-gray-800">{recentActivity.totalStudyMinutes}</p>
-              <p className="text-xs text-gray-500 text-center leading-tight">Phút tuần này</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{recentActivity.totalStudyMinutes}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center leading-tight">Phút tuần này</p>
             </div>
 
             {/* Weekly sessions */}
-            <div className="bg-white rounded-xl shadow-sm p-4 flex flex-col items-center gap-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-4 flex flex-col items-center gap-2">
               <BookOpen size={20} className="text-green-500" />
-              <p className="text-xl font-bold text-gray-800">{recentActivity.sessionsThisWeek}</p>
-              <p className="text-xs text-gray-500 text-center leading-tight">Số buổi học</p>
+              <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{recentActivity.sessionsThisWeek}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 text-center leading-tight">Số buổi học</p>
             </div>
           </div>
         </div>
 
         {/* ── Section 4: AI Chat Quick Access ───────────────────────────── */}
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3 px-1">
             Trợ lý AI
           </h2>
 
           <Link to="/ai-chat">
-            <div className="bg-white rounded-xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm dark:shadow-gray-900/20 p-5 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <MessageSquare size={18} className="text-purple-600" />
+                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+                  <MessageSquare size={18} className="text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <p className="font-semibold text-gray-800">Hỏi AI</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-semibold text-gray-800 dark:text-gray-100">Hỏi AI</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Quota: {aiQuota.used}/{aiQuota.limit} câu hỏi hôm nay
                   </p>
                 </div>
@@ -258,13 +262,13 @@ export default function Dashboard() {
 
               {/* Quota progress mini-bar */}
               <div className="flex flex-col items-end gap-1.5">
-                <div className="w-20 bg-gray-100 rounded-full h-1.5">
+                <div className="w-20 bg-gray-100 dark:bg-gray-700 rounded-full h-1.5">
                   <div
                     className="bg-purple-500 h-1.5 rounded-full"
                     style={{ width: `${Math.min((aiQuota.used / aiQuota.limit) * 100, 100)}%` }}
                   />
                 </div>
-                <span className="text-xs text-purple-600 font-medium">
+                <span className="text-xs text-purple-600 dark:text-purple-400 font-medium">
                   Còn {aiQuota.limit - aiQuota.used} câu
                 </span>
               </div>

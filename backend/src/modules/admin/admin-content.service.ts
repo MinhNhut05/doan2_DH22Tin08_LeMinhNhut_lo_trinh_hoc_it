@@ -18,14 +18,14 @@ interface AiQuizQuestion {
 }
 
 // Kết quả cho mỗi lesson đã tạo
-interface GeneratedLesson {
+export interface GeneratedLesson {
   slug: string;
   title: string;
   hasQuiz: boolean;
 }
 
 // Kết quả trả về cho client
-interface GenerateContentResult {
+export interface GenerateContentResult {
   created: number;
   lessons: GeneratedLesson[];
   errors: string[];
