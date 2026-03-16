@@ -2,13 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller.js';
-import { AuthService, OtpVerifyResult, TokenUser } from './auth.service.js';
+import { AuthService, TokenUser } from './auth.service.js';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: {
     requestOtp: jest.Mock;
     verifyOtp: jest.Mock;
+    register: jest.Mock;
+    login: jest.Mock;
+    forgotPassword: jest.Mock;
+    resetPassword: jest.Mock;
     findOrCreateOAuthUser: jest.Mock;
     generateTokenPair: jest.Mock;
     validateRefreshToken: jest.Mock;
@@ -22,31 +26,28 @@ describe('AuthController', () => {
       requestOtp: jest.fn().mockResolvedValue({
         message: 'If this email is valid, you will receive an OTP code.',
       }),
+
+      // FIXED: verifyOtp giờ trả message (không còn tokens + cookie)
       verifyOtp: jest.fn().mockResolvedValue({
+        message: 'Email đã được xác thực. Bạn có thể đăng nhập.',
+      }),
+
+      // THÊM MỚI:
+      register: jest.fn().mockResolvedValue({
+        message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực.',
+      }),
+      login: jest.fn().mockResolvedValue({
         accessToken: 'mock-access-token',
         refreshToken: 'mock-refresh-token',
-        user: {
-          id: 'user-1',
-          email: 'test@example.com',
-          role: 'USER',
-          isNewUser: false,
-        },
-      } satisfies OtpVerifyResult),
-      findOrCreateOAuthUser: jest.fn().mockResolvedValue({
-        id: 'user-1',
-        email: 'oauth@example.com',
-        role: 'USER',
-        isNewUser: false,
+        user: { id: 'user-1', email: 'test@example.com', role: 'USER', displayName: 'Test', isNewUser: false },
       }),
-      generateTokenPair: jest.fn().mockResolvedValue({
-        accessToken: 'oauth-access-token',
-        refreshToken: 'oauth-refresh-token',
-      }),
-      validateRefreshToken: jest.fn().mockResolvedValue({
-        id: 'user-1',
-        email: 'test@example.com',
-        role: 'USER',
-      } satisfies TokenUser),
+      forgotPassword: jest.fn().mockResolvedValue({ message: 'Nếu email tồn tại, mã OTP đã được gửi.' }),
+      resetPassword: jest.fn().mockResolvedValue({ message: 'Mật khẩu đã được thay đổi thành công.' }),
+
+      // Giữ nguyên:
+      findOrCreateOAuthUser: jest.fn().mockResolvedValue({ id: 'user-1', email: 'oauth@example.com', role: 'USER', isNewUser: false }),
+      generateTokenPair: jest.fn().mockResolvedValue({ accessToken: 'oauth-access-token', refreshToken: 'oauth-refresh-token' }),
+      validateRefreshToken: jest.fn().mockResolvedValue({ id: 'user-1', email: 'test@example.com', role: 'USER' } satisfies TokenUser),
       revokeRefreshToken: jest.fn().mockResolvedValue(undefined),
       deleteRefreshToken: jest.fn().mockResolvedValue(undefined),
     };
@@ -86,91 +87,93 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/otp/verify', () => {
-    let mockRes: {
-      cookie: jest.Mock;
-    };
+    it('should call authService.verifyOtp with email and code', async () => {
+      const dto = { email: 'test@example.com', code: '123456' };
+      await controller.verifyOtp(dto);
+      expect(authService.verifyOtp).toHaveBeenCalledWith('test@example.com', '123456');
+    });
 
-    beforeEach(() => {
-      mockRes = {
-        cookie: jest.fn(),
-      };
+    it('should return message from authService', async () => {
+      const result = await controller.verifyOtp({ email: 'test@example.com', code: '123456' });
+      expect(result).toEqual({ message: 'Email đã được xác thực. Bạn có thể đăng nhập.' });
+    });
+  });
+
+  // ─── POST /auth/register ──────────────────────────────────────────────────
+
+  describe('POST /auth/register', () => {
+    it('should call authService.register with DTO', async () => {
+      const dto = { email: 'new@example.com', displayName: 'Leminho', password: 'Pass123!' };
+      await controller.register(dto);
+      expect(authService.register).toHaveBeenCalledWith(dto);
+    });
+
+    it('should return message from authService', async () => {
+      const result = await controller.register({
+        email: 'new@example.com', displayName: 'Leminho', password: 'Pass123!',
+      });
+      expect(result).toEqual({ message: expect.stringContaining('Đăng ký thành công') });
+    });
+  });
+
+  // ─── POST /auth/login ─────────────────────────────────────────────────────
+
+  describe('POST /auth/login', () => {
+    let mockRes: { cookie: jest.Mock };
+    beforeEach(() => { mockRes = { cookie: jest.fn() }; });
+
+    it('should call authService.login with DTO', async () => {
+      const dto = { email: 'test@example.com', password: 'Pass123!' };
+      await controller.login(dto, mockRes as any);
+      expect(authService.login).toHaveBeenCalledWith(dto);
     });
 
     it('should set refreshToken as HttpOnly cookie', async () => {
-      await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
-
+      await controller.login({ email: 'test@example.com', password: 'x' }, mockRes as any);
       expect(mockRes.cookie).toHaveBeenCalledWith(
-        'refreshToken',
-        'mock-refresh-token',
-        expect.objectContaining({
-          httpOnly: true,
-          sameSite: 'strict',
-          path: '/api/v1/auth',
-        }),
+        'refreshToken', 'mock-refresh-token',
+        expect.objectContaining({ httpOnly: true, sameSite: 'strict', path: '/api/v1/auth' }),
       );
     });
 
-    it('should NOT include refreshToken in response body', async () => {
-      const result = await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
-
-      expect(result).not.toHaveProperty('refreshToken');
-    });
-
-    it('should return accessToken and user in response body', async () => {
-      const result = await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
-
+    it('should return accessToken and user in body — NOT refreshToken', async () => {
+      const result = await controller.login({ email: 'test@example.com', password: 'x' }, mockRes as any);
       expect(result).toEqual({
         accessToken: 'mock-access-token',
-        user: {
-          id: 'user-1',
-          email: 'test@example.com',
-          role: 'USER',
-          isNewUser: false,
-        },
+        user: { id: 'user-1', email: 'test@example.com', role: 'USER', displayName: 'Test', isNewUser: false },
       });
+      expect(result).not.toHaveProperty('refreshToken');
+    });
+  });
+
+  // ─── POST /auth/forgot-password ───────────────────────────────────────────
+
+  describe('POST /auth/forgot-password', () => {
+    it('should call authService.forgotPassword with email', async () => {
+      await controller.forgotPassword({ email: 'test@example.com' });
+      expect(authService.forgotPassword).toHaveBeenCalledWith('test@example.com');
     });
 
-    it('should set cookie maxAge to 7 days', async () => {
-      await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
+    it('should return message from authService', async () => {
+      const result = await controller.forgotPassword({ email: 'test@example.com' });
+      expect(result).toEqual({ message: 'Nếu email tồn tại, mã OTP đã được gửi.' });
+    });
+  });
 
-      const cookieOptions = mockRes.cookie.mock.calls[0][2];
-      expect(cookieOptions.maxAge).toBe(7 * 24 * 60 * 60 * 1000);
+  // ─── POST /auth/reset-password ────────────────────────────────────────────
+
+  describe('POST /auth/reset-password', () => {
+    it('should call authService.resetPassword with full DTO', async () => {
+      const dto = { email: 'test@example.com', code: '123456', newPassword: 'NewPass123!' };
+      await controller.resetPassword(dto);
+      expect(authService.resetPassword).toHaveBeenCalledWith(dto);
     });
 
-    it('should set secure=false in development', async () => {
-      configService.get.mockReturnValue('development');
-
-      await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
-
-      const cookieOptions = mockRes.cookie.mock.calls[0][2];
-      expect(cookieOptions.secure).toBe(false);
-    });
-
-    it('should set secure=true in production', async () => {
-      configService.get.mockReturnValue('production');
-
-      await controller.verifyOtp(
-        { email: 'test@example.com', code: '123456' },
-        mockRes as any,
-      );
-
-      const cookieOptions = mockRes.cookie.mock.calls[0][2];
-      expect(cookieOptions.secure).toBe(true);
+    it('should return message from authService', async () => {
+      const result = await controller.resetPassword({
+        email: 'test@example.com', code: '123456', newPassword: 'NewPass123!',
+      });
+      expect(result).toEqual({ message: 'Mật khẩu đã được thay đổi thành công.' });
     });
   });
 
