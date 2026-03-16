@@ -99,6 +99,16 @@ describe('LessonsService', () => {
       track: {
         findFirst: jest.fn(), // dùng trong advanceToNextLesson khi hết track
       },
+      quiz: {
+        findUnique: jest.fn().mockResolvedValue(null), // default: lesson chưa có quiz
+      },
+      quizQuestion: {
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      quizResult: {
+        count: jest.fn().mockResolvedValue(0),
+        create: jest.fn(),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -226,7 +236,7 @@ describe('LessonsService', () => {
         },
       });
       // getLessonBySlug giờ return { ...lesson, userProgress } thay vì chỉ lesson
-      expect(result).toEqual({ ...mockLesson, userProgress: mockUserProgress });
+      expect(result).toEqual({ ...mockLesson, userProgress: mockUserProgress, quiz: null });
     });
 
     it('should return lesson with userProgress: null when user has not interacted with the lesson yet', async () => {
@@ -239,7 +249,7 @@ describe('LessonsService', () => {
       const result = await service.getLessonBySlug(mockUserId, mockSlug);
 
       // userProgress: null khi user chưa interact → frontend hiển thị nút "Start Lesson"
-      expect(result).toEqual({ ...mockLesson, userProgress: null });
+      expect(result).toEqual({ ...mockLesson, userProgress: null, quiz: null });
     });
 
     it('should throw NotFoundException when lesson is not found or not published', async () => {
