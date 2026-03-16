@@ -639,9 +639,29 @@ export class AuthService {
       },
     });
 
-    // ── Validation chain: từ generic → specific ──
+    // ── Dummy hash: luôn chạy bcrypt.compare() dù user không tồn tại ──
+    //
+    // Vấn đề timing attack:
+    //   - User không tồn tại → throw ngay → response ~5ms
+    //   - User tồn tại + sai password → bcrypt.compare() → response ~250ms
+    //   - Attacker đo thời gian → biết email nào đã đăng ký
+    //
+    // Fix: luôn chạy bcrypt.compare() với dummy hash khi user không tồn tại
+    //   → Response time LUÔN ~250ms dù email đúng hay sai
+    //   → Attacker không phân biệt được
+    //
+    // Tại sao không dùng bcrypt.hash() thay vì dummy hash?
+    //   → bcrypt.hash() tạo hash mới mỗi lần (khác thời gian)
+    //   → Dummy hash là constant → timing consistent hơn
+    const DUMMY_HASH =
+      '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj3VFClrJpBO';
+    const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
+    await bcrypt.compare(dto.password, hashToCompare);
+
+    // ── Validation chain: từ generic → specific (SAU bcrypt để timing đồng đều) ──
     if (!user) {
       // Không reveal "email không tồn tại" → chống enumeration
+      // bcrypt đã chạy xong ở trên → response time giống nhau
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
@@ -659,7 +679,9 @@ export class AuthService {
       );
     }
 
-    // ── Compare password ──
+    // ── Compare password (thực sự) ──
+    // Lưu ý: bcrypt.compare() đã chạy 1 lần ở trên (cho timing)
+    // Cần chạy lại với passwordHash thật để lấy kết quả đúng
     const isPasswordValid = await bcrypt.compare(
       dto.password,
       user.passwordHash,
