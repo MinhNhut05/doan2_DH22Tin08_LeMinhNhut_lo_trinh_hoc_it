@@ -278,7 +278,7 @@ describe('AiChatService', () => {
       const result = await service.getQuota(mockUserId);
 
       expect(result.used).toBe(0);
-      expect(result.max).toBe(10);
+      expect(result.limit).toBe(10);
       expect(result.remaining).toBe(10);
       expect(result.date).toMatch(/^\d{4}-\d{2}-\d{2}$/); // format YYYY-MM-DD
     });
@@ -293,7 +293,7 @@ describe('AiChatService', () => {
       const result = await service.getQuota(mockUserId);
 
       expect(result.used).toBe(3);
-      expect(result.max).toBe(10);
+      expect(result.limit).toBe(10);
       expect(result.remaining).toBe(7);
     });
 

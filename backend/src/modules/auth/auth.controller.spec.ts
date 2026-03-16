@@ -233,12 +233,12 @@ describe('AuthController', () => {
     });
 
     it('should redirect to frontend with accessToken and isNewUser', async () => {
-      configService.get.mockReturnValue('http://localhost:5173');
+      configService.get.mockReturnValue('http://localhost:5174');
 
       await controller.googleCallback(mockReq as any, mockRes as any);
 
       expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=oauth-access-token&isNewUser=false',
+        'http://localhost:5174/auth/callback?token=oauth-access-token&isNewUser=false',
       );
     });
 
@@ -249,7 +249,7 @@ describe('AuthController', () => {
         role: 'USER',
         isNewUser: true,
       });
-      configService.get.mockReturnValue('http://localhost:5173');
+      configService.get.mockReturnValue('http://localhost:5174');
 
       await controller.googleCallback(mockReq as any, mockRes as any);
 
@@ -290,7 +290,7 @@ describe('AuthController', () => {
     });
 
     it('should set refreshToken cookie and redirect', async () => {
-      configService.get.mockReturnValue('http://localhost:5173');
+      configService.get.mockReturnValue('http://localhost:5174');
 
       await controller.githubCallback(mockReq as any, mockRes as any);
 
@@ -300,7 +300,7 @@ describe('AuthController', () => {
         expect.objectContaining({ httpOnly: true }),
       );
       expect(mockRes.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=oauth-access-token&isNewUser=false',
+        'http://localhost:5174/auth/callback?token=oauth-access-token&isNewUser=false',
       );
     });
   });

@@ -144,8 +144,8 @@ export class SubscriptionsService {
     let paymentUrl: string | undefined;
 
     if (dto.provider === PaymentProvider.MOMO) {
-      const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:5173');
-      const backendUrl = this.configService.get('BACKEND_URL', 'http://localhost:3001');
+      const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:5174');
+      const backendUrl = this.configService.get('BACKEND_URL', 'http://localhost:3002');
 
       const result = await this.momoService.createPayment({
         orderId,
