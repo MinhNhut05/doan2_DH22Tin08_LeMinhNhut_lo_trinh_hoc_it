@@ -39,7 +39,15 @@ describe('AuthService', () => {
         update: jest.fn().mockResolvedValue({}),
       },
       user: {
-        findUnique: jest.fn().mockResolvedValue(null),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'user-1',
+          email: 'test@example.com',
+          role: 'USER',
+          emailVerified: true,
+          passwordHash: 'hashed-password',
+          onboardingData: null,
+          displayName: 'Test User',
+        }),
         create: jest.fn().mockResolvedValue({
           id: 'user-1',
           email: 'test@example.com',
@@ -230,47 +238,19 @@ describe('AuthService', () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
     });
 
-    it('should verify OTP and return tokens for existing user', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        email: 'test@example.com',
-        role: 'USER',
-      });
-
-      const result = await authService.verifyOtp(
-        'test@example.com',
-        '123456',
-      );
-
-      expect(result).toEqual({
-        accessToken: 'mock-jwt-token',
-        refreshToken: 'mock-jwt-token',
-        user: {
-          id: 'user-1',
-          email: 'test@example.com',
-          role: 'USER',
-          isNewUser: false,
-        },
+    it('should set emailVerified=true for existing user', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+      await authService.verifyOtp('test@example.com', '123456');
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { email: 'test@example.com' },
+        data: { emailVerified: true },
       });
     });
 
-    it('should auto-create user and return isNewUser=true for new email', async () => {
-      prisma.user.findUnique.mockResolvedValue(null);
-      prisma.user.create.mockResolvedValue({
-        id: 'new-user-1',
-        email: 'new@example.com',
-        role: 'USER',
-      });
-
-      const result = await authService.verifyOtp('new@example.com', '123456');
-
-      expect(prisma.user.create).toHaveBeenCalledWith({
-        data: {
-          email: 'new@example.com',
-          authProvider: 'email',
-        },
-      });
-      expect(result.user.isNewUser).toBe(true);
+    it('should return success message', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+      const result = await authService.verifyOtp('test@example.com', '123456');
+      expect(result).toEqual({ message: 'Email đã được xác thực. Bạn có thể đăng nhập.' });
     });
 
     it('should throw UNAUTHORIZED when no OTP found', async () => {
@@ -322,12 +302,6 @@ describe('AuthService', () => {
     });
 
     it('should mark OTP as verified after successful verification', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-1',
-        email: 'test@example.com',
-        role: 'USER',
-      });
-
       await authService.verifyOtp('test@example.com', '123456');
 
       // Second update call should mark as verified
@@ -339,7 +313,6 @@ describe('AuthService', () => {
   });
 
   // ─── findOrCreateOAuthUser ──────────────────────────────────────────────
-
   describe('findOrCreateOAuthUser', () => {
     const googleProfile = {
       provider: 'google' as const,
@@ -464,6 +437,7 @@ describe('AuthService', () => {
           googleId: 'google-123',
           displayName: 'OAuth User',
           avatarUrl: 'https://example.com/avatar.jpg',
+          emailVerified: true,
         },
       });
       expect(result).toEqual({
@@ -472,6 +446,162 @@ describe('AuthService', () => {
         role: 'USER',
         isNewUser: true,
       });
+    });
+  });
+
+  // ─── register ───────────────────────────────────────────────────────────
+
+  describe('register', () => {
+    it('happy path: tạo user + gửi OTP → return message', async () => {
+      prisma.user.findUnique.mockResolvedValue(null); // email chưa tồn tại
+      prisma.user.create.mockResolvedValue({ id: 'new-1', email: 'new@example.com', role: 'USER' });
+
+      const result = await authService.register({
+        email: 'new@example.com',
+        displayName: 'Leminho',
+        password: 'StrongPass123!',
+      });
+
+      expect(bcrypt.hash).toHaveBeenCalledWith('StrongPass123!', 12);
+      expect(prisma.user.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ emailVerified: false }) })
+      );
+      expect(mailService.sendOtpEmail).toHaveBeenCalled();
+      expect(result).toEqual({ message: expect.stringContaining('Đăng ký thành công') });
+    });
+
+    it('email đã tồn tại → return same message, KHÔNG tạo user, KHÔNG gửi OTP (anti-enumeration)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'existing', email: 'used@example.com' });
+
+      const result = await authService.register({
+        email: 'used@example.com', displayName: 'X', password: 'Pass123!',
+      });
+
+      // Should return same success message (anti-enumeration)
+      expect(result).toEqual({ message: expect.stringContaining('Đăng ký thành công') });
+      // Should NOT create user
+      expect(prisma.user.create).not.toHaveBeenCalled();
+      // Should NOT send OTP email
+      expect(mailService.sendOtpEmail).not.toHaveBeenCalled();
+    });
+
+    it('bcrypt.hash luôn được gọi dù email đã tồn tại (chống timing attack)', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'existing', email: 'used@example.com' });
+
+      await authService.register({
+        email: 'used@example.com', displayName: 'X', password: 'Pass123!',
+      });
+
+      // bcrypt.hash MUST be called even when email already exists
+      expect(bcrypt.hash).toHaveBeenCalledWith('Pass123!', 12);
+    });
+  });
+
+  // ─── login ──────────────────────────────────────────────────────────────
+
+  describe('login', () => {
+    const mockLoginUser = {
+      id: 'user-1', email: 'test@example.com', role: 'USER',
+      emailVerified: true, passwordHash: 'hashed-password',
+      displayName: 'Test', onboardingData: null,
+    };
+
+    beforeEach(() => {
+      prisma.user.findUnique.mockResolvedValue(mockLoginUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+    });
+
+    it('happy path → return accessToken, refreshToken, user', async () => {
+      const result = await authService.login({ email: 'test@example.com', password: 'Pass123!' });
+      expect(result).toMatchObject({
+        accessToken: 'mock-jwt-token',
+        refreshToken: 'mock-jwt-token',
+        user: { id: 'user-1', isNewUser: true }, // onboardingData=null → isNewUser=true
+      });
+    });
+
+    it('email không tồn tại → throw UnauthorizedException', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(authService.login({ email: 'no@example.com', password: 'x' }))
+        .rejects.toThrow(UnauthorizedException);
+    });
+
+    it('email chưa verified → throw UnauthorizedException', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockLoginUser, emailVerified: false });
+      await expect(authService.login({ email: 'test@example.com', password: 'x' }))
+        .rejects.toThrow(UnauthorizedException);
+    });
+
+    it('OAuth user (no passwordHash) → throw UnauthorizedException', async () => {
+      prisma.user.findUnique.mockResolvedValue({ ...mockLoginUser, passwordHash: null });
+      await expect(authService.login({ email: 'test@example.com', password: 'x' }))
+        .rejects.toThrow(UnauthorizedException);
+    });
+
+    it('password sai → throw UnauthorizedException', async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      await expect(authService.login({ email: 'test@example.com', password: 'wrong' }))
+        .rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  // ─── forgotPassword ──────────────────────────────────────────────────────
+
+  describe('forgotPassword', () => {
+    it('email tồn tại → gửi OTP', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+      const result = await authService.forgotPassword('test@example.com');
+      expect(mailService.sendOtpEmail).toHaveBeenCalled();
+      expect(result).toEqual({ message: 'Nếu email tồn tại, mã OTP đã được gửi.' });
+    });
+
+    it('email không tồn tại → KHÔNG gửi OTP, vẫn return same message (anti-enumeration)', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      const result = await authService.forgotPassword('unknown@example.com');
+      expect(mailService.sendOtpEmail).not.toHaveBeenCalled();
+      expect(result).toEqual({ message: 'Nếu email tồn tại, mã OTP đã được gửi.' });
+    });
+  });
+
+  // ─── resetPassword ──────────────────────────────────────────────────────
+
+  describe('resetPassword', () => {
+    const validOtp = {
+      id: 'otp-1', email: 'test@example.com', code: 'hashed-code',
+      expiresAt: new Date(Date.now() + 120000), attempts: 0, verified: false, createdAt: new Date(),
+    };
+
+    beforeEach(() => {
+      prisma.oTPCode.findFirst.mockResolvedValue(validOtp);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', email: 'test@example.com' });
+    });
+
+    it('happy path: OTP đúng → cập nhật password → return message', async () => {
+      const result = await authService.resetPassword({
+        email: 'test@example.com', code: '123456', newPassword: 'NewPass123!',
+      });
+      expect(bcrypt.hash).toHaveBeenCalledWith('NewPass123!', 12);
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ passwordHash: 'hashed-code' }) })
+      );
+      expect(result).toEqual({ message: 'Mật khẩu đã được thay đổi thành công.' });
+    });
+
+    it('OTP sai → throw UnauthorizedException', async () => {
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      await expect(authService.resetPassword({
+        email: 'test@example.com', code: '000000', newPassword: 'NewPass!',
+      })).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('OTP hết hạn → throw UnauthorizedException', async () => {
+      prisma.oTPCode.findFirst.mockResolvedValue({
+        ...validOtp, expiresAt: new Date(Date.now() - 1000),
+      });
+      await expect(authService.resetPassword({
+        email: 'test@example.com', code: '123456', newPassword: 'NewPass!',
+      })).rejects.toThrow(UnauthorizedException);
     });
   });
 });
