@@ -16,6 +16,7 @@
 import {
   Injectable,
   UnauthorizedException,
+  NotFoundException,
   HttpException,
   HttpStatus,
   Logger,
@@ -54,15 +55,16 @@ interface JwtPayload {
   exp: number;
 }
 
-// Return type của verifyOtp()
-// Controller cần cả refreshToken (để set cookie) và user info (để trả về client)
-export interface OtpVerifyResult {
+// Return type của login()
+// Controller cần refreshToken (để set cookie) và user info (để trả về client)
+export interface LoginResult {
   accessToken: string;
   refreshToken: string;
   user: {
     id: string;
     email: string;
     role: UserRole;
+    displayName: string | null;
     isNewUser: boolean; // Frontend dùng để redirect tới onboarding
   };
 }
@@ -428,25 +430,24 @@ export class AuthService {
     return { message: 'If this email is valid, you will receive an OTP code.' };
   }
 
-  // ─── Verify OTP ─────────────────────────────────────────────────────────
+  // ─── Verify OTP (Private Helper) ──────────────────────────────────────────
 
   /**
-   * Verify OTP code và trả về tokens
+   * Logic thuần (pure logic) để verify OTP code — KHÔNG tạo user hay token.
    *
-   * Flow:
-   *   1. Tìm OTP mới nhất (chưa verified) cho email này
-   *   2. Check hết hạn (2 phút)
-   *   3. Check số lần thử (max 5)
-   *   4. Tăng attempts TRƯỚC khi compare (chống race condition)
-   *   5. So sánh hash bằng bcrypt.compare()
-   *   6. Nếu sai: exponential delay → throw error
-   *   7. Nếu đúng: mark verified, find/create user, generate tokens
+   * Tại sao tách ra?
+   *   - verifyOtp() dùng khi email verification (sau register)
+   *   - resetPassword() dùng khi đổi mật khẩu
+   *   - Cả 2 cần cùng logic verify OTP → DRY (Don't Repeat Yourself)
    *
-   * @param email - Email address
-   * @param code - 6-digit OTP code
-   * @returns OtpVerifyResult { accessToken, refreshToken, user }
+   * Throws:
+   *   - UnauthorizedException nếu OTP không tồn tại, hết hạn, hoặc sai
+   *   - HttpException(TOO_MANY_REQUESTS) nếu quá 5 lần thử
+   *
+   * @param email - Email gắn với OTP
+   * @param code - 6-digit OTP code từ user
    */
-  async verifyOtp(email: string, code: string): Promise<OtpVerifyResult> {
+  private async _verifyOtpCode(email: string, code: string): Promise<void> {
     // ── Tìm latest unverified OTP ──
     const otp = await this.prisma.oTPCode.findFirst({
       where: {
@@ -478,9 +479,7 @@ export class AuthService {
     }
 
     // ── Increment attempts TRƯỚC khi compare ──
-    // Ghi nhận trước, compare sau → chống race condition:
-    //   Nếu 2 request đến cùng lúc, cả 2 đều đọc attempts=0,
-    //   nhưng increment đảm bảo mỗi request đều được đếm
+    // Ghi nhận trước, compare sau → chống race condition
     await this.prisma.oTPCode.update({
       where: { id: otp.id },
       data: { attempts: { increment: 1 } },
@@ -491,9 +490,7 @@ export class AuthService {
 
     if (!isValid) {
       // ── Exponential backoff ──
-      // Mục đích: làm chậm brute force attack
-      // Attempt 1 → 1s, Attempt 2 → 2s, Attempt 3 → 4s, Attempt 4 → 8s, Attempt 5 → 16s
-      // Cap tại 16s để không block quá lâu
+      // Attempt 1 → 1s, Attempt 2 → 2s, ..., cap tại 16s
       const delayMs = Math.min(1000 * Math.pow(2, otp.attempts), 16000);
       await new Promise((resolve) => setTimeout(resolve, delayMs));
 
@@ -505,21 +502,172 @@ export class AuthService {
       where: { id: otp.id },
       data: { verified: true },
     });
+  }
 
-    // ── Find or create user ──
-    let isNewUser = false;
-    let user = await this.prisma.user.findUnique({ where: { email } });
+  // ─── Verify OTP ─────────────────────────────────────────────────────────
 
-    if (!user) {
-      isNewUser = true;
-      user = await this.prisma.user.create({
-        data: {
-          email,
-          authProvider: 'email',
-          // role defaults to USER (from schema)
-        },
+  /**
+   * Verify OTP code — chỉ dùng cho EMAIL VERIFICATION (sau register)
+   *
+   * Before (passwordless): verify OTP → tạo user → tạo token → return tokens
+   * After (password-based): verify OTP → set emailVerified = true → return message
+   *
+   * Tại sao thay đổi?
+   *   - Passwordless: OTP là cách login duy nhất → cần trả token
+   *   - Password-based: OTP chỉ confirm email → user login bằng password sau đó
+   *
+   * @param email - Email address
+   * @param code - 6-digit OTP code
+   * @returns { message: string }
+   */
+  async verifyOtp(
+    email: string,
+    code: string,
+  ): Promise<{ message: string }> {
+    // Dùng private helper — reuse logic với resetPassword()
+    await this._verifyOtpCode(email, code);
+
+    // Tìm user và set emailVerified = true
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      await this.prisma.user.update({
+        where: { email },
+        data: { emailVerified: true },
       });
-      this.logger.log(`New user created via OTP: ${email}`);
+    }
+
+    return { message: 'Email đã được xác thực. Bạn có thể đăng nhập.' };
+  }
+
+  // ─── Register ──────────────────────────────────────────────────────────
+
+  /**
+   * Đăng ký tài khoản mới bằng email + password
+   *
+   * Flow:
+   *   1. Always hash password (chống timing attack)
+   *   2. Hash password bằng bcrypt (salt rounds = 12)
+   *   3. Tạo user với emailVerified: false
+   *   4. Gửi OTP verification email (reuse requestOtp)
+   *
+   * Tại sao salt rounds = 12 thay vì 10 (như OTP)?
+   *   - Password tồn tại lâu dài trong DB → cần hash mạnh hơn
+   *   - OTP chỉ sống 2 phút → 10 rounds đủ rồi
+   *   - 12 rounds ≈ ~250ms → chấp nhận được cho register (1 lần duy nhất)
+   *
+   * @param dto - { email, displayName, password }
+   * @returns { message: string }
+   */
+  async register(dto: {
+    email: string;
+    displayName: string;
+    password: string;
+  }): Promise<{ message: string }> {
+    // ── Always hash password (chống timing attack) ──
+    // Dù email đã tồn tại hay chưa, luôn chạy bcrypt.hash()
+    // → Response time giống nhau → attacker không đoán được email có tồn tại không
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    // ── Check email đã tồn tại chưa ──
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      // Email đã tồn tại → KHÔNG tạo user, KHÔNG gửi OTP
+      // Nhưng trả CÙNG message → chống email enumeration
+      // Future improvement: gửi email thông báo "ai đó đã cố đăng ký bằng email của bạn"
+      this.logger.warn(`Registration attempt for existing email: ${dto.email}`);
+      return {
+        message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực.',
+      };
+    }
+
+    // ── Tạo user ──
+    await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        displayName: dto.displayName,
+        passwordHash,
+        emailVerified: false, // Phải verify email trước khi login
+        authProvider: 'email',
+      },
+    });
+
+    this.logger.log(`New user registered: ${dto.email}`);
+
+    // ── Gửi OTP verification email ──
+    // Reuse requestOtp() → DRY, cùng logic rate limit + hash + send email
+    await this.requestOtp(dto.email);
+
+    return {
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực.',
+    };
+  }
+
+  // ─── Login ─────────────────────────────────────────────────────────────
+
+  /**
+   * Đăng nhập bằng email + password
+   *
+   * Flow:
+   *   1. Tìm user theo email (include onboardingData để check isNewUser)
+   *   2. Validate: email tồn tại, đã verified, có passwordHash, password đúng
+   *   3. Generate token pair → return LoginResult
+   *
+   * Security notes:
+   *   - "Email hoặc mật khẩu không đúng" — message chung, KHÔNG reveal
+   *     email có tồn tại không (chống enumeration)
+   *   - Check emailVerified trước khi cho login → chống spam accounts
+   *   - Check passwordHash null → phân biệt OAuth-only accounts
+   *
+   * @param dto - { email, password }
+   * @returns LoginResult { accessToken, refreshToken, user }
+   */
+  async login(dto: {
+    email: string;
+    password: string;
+  }): Promise<LoginResult> {
+    // ── Tìm user + check onboardingData (để xác định isNewUser) ──
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+      include: {
+        onboardingData: {
+          select: { id: true }, // Chỉ cần biết có tồn tại hay không
+        },
+      },
+    });
+
+    // ── Validation chain: từ generic → specific ──
+    if (!user) {
+      // Không reveal "email không tồn tại" → chống enumeration
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
+    }
+
+    if (!user.emailVerified) {
+      // User đã register nhưng chưa verify email
+      throw new UnauthorizedException(
+        'Vui lòng xác thực email trước khi đăng nhập',
+      );
+    }
+
+    if (!user.passwordHash) {
+      // User chỉ có OAuth login (Google/GitHub), chưa set password
+      throw new UnauthorizedException(
+        'Tài khoản này sử dụng đăng nhập Google/GitHub',
+      );
+    }
+
+    // ── Compare password ──
+    const isPasswordValid = await bcrypt.compare(
+      dto.password,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      // Cùng message với "user not found" → chống enumeration
+      throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
 
     // ── Generate token pair ──
@@ -538,9 +686,82 @@ export class AuthService {
         id: user.id,
         email: user.email,
         role: user.role,
-        isNewUser,
+        displayName: user.displayName,
+        isNewUser: !user.onboardingData, // null = chưa onboard = new user
       },
     };
+  }
+
+  // ─── Forgot Password ──────────────────────────────────────────────────
+
+  /**
+   * Gửi OTP để reset password
+   *
+   * Anti-enumeration pattern:
+   *   - Email tồn tại → gửi OTP
+   *   - Email KHÔNG tồn tại → KHÔNG gửi, nhưng trả CÙNG response
+   *   → Attacker không biết email nào đã đăng ký
+   *
+   * @param email - Email address
+   * @returns { message: string } — luôn giống nhau
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (user) {
+      // Chỉ gửi OTP nếu user tồn tại — nhưng response luôn giống nhau
+      await this.requestOtp(email);
+    }
+
+    // Luôn trả cùng message → anti-enumeration
+    return { message: 'Nếu email tồn tại, mã OTP đã được gửi.' };
+  }
+
+  // ─── Reset Password ───────────────────────────────────────────────────
+
+  /**
+   * Đổi mật khẩu bằng OTP code (sau forgot password)
+   *
+   * Flow:
+   *   1. Verify OTP (reuse _verifyOtpCode helper)
+   *   2. Check user tồn tại → NotFoundException nếu không
+   *   3. Hash password mới → update DB
+   *
+   * Tại sao check user sau khi verify OTP?
+   *   - OTP verify tốn tài nguyên (bcrypt compare) → chỉ làm nếu OTP đúng
+   *   - User không tồn tại nhưng có OTP = edge case hiếm (user bị xóa giữa chừng)
+   *
+   * @param dto - { email, code, newPassword }
+   * @returns { message: string }
+   */
+  async resetPassword(dto: {
+    email: string;
+    code: string;
+    newPassword: string;
+  }): Promise<{ message: string }> {
+    // ── Verify OTP — reuse private helper ──
+    await this._verifyOtpCode(dto.email, dto.code);
+
+    // ── Check user tồn tại ──
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy tài khoản');
+    }
+
+    // ── Hash + update password ──
+    const passwordHash = await bcrypt.hash(dto.newPassword, 12);
+
+    await this.prisma.user.update({
+      where: { email: dto.email },
+      data: { passwordHash },
+    });
+
+    this.logger.log(`Password reset for: ${dto.email}`);
+
+    return { message: 'Mật khẩu đã được thay đổi thành công.' };
   }
 
   // ─── OAuth: Find or Create User ─────────────────────────────────────────
@@ -604,10 +825,12 @@ export class AuthService {
       if (user) {
         // Merge: gắn OAuth ID vào account cũ
         // Update displayName/avatarUrl nếu chưa có (không ghi đè nếu đã set)
+        // emailVerified: true → OAuth provider đã xác thực email rồi
         user = await tx.user.update({
           where: { id: user.id },
           data: {
             [providerField]: profile.providerId,
+            emailVerified: true,
             ...(user.displayName ? {} : { displayName: profile.displayName }),
             ...(user.avatarUrl ? {} : { avatarUrl: profile.avatarUrl }),
           },
@@ -625,7 +848,7 @@ export class AuthService {
         };
       }
 
-      // Tạo user mới
+      // Tạo user mới — emailVerified: true vì OAuth provider đã verify
       user = await tx.user.create({
         data: {
           email: profile.email,
@@ -633,6 +856,7 @@ export class AuthService {
           [providerField]: profile.providerId,
           displayName: profile.displayName,
           avatarUrl: profile.avatarUrl,
+          emailVerified: true,
         },
       });
 
