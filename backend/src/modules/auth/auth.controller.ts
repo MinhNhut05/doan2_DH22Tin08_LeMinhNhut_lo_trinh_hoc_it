@@ -28,7 +28,14 @@ import {
 import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service.js';
-import { RequestOtpDto, VerifyOtpDto } from './dto/index.js';
+import {
+  RequestOtpDto,
+  VerifyOtpDto,
+  RegisterDto,
+  LoginDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+} from './dto/index.js';
 import { GoogleAuthGuard, GithubAuthGuard, JwtAuthGuard } from './guards/index.js';
 
 @Controller('auth')
@@ -37,6 +44,53 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
+
+  // ─── Register ───────────────────────────────────────────────────────────
+
+  /**
+   * POST /api/v1/auth/register
+   *
+   * Đăng ký tài khoản mới bằng email + password.
+   * Sau khi đăng ký, OTP verification email sẽ được gửi tự động.
+   *
+   * Request body: { email, displayName, password }
+   * Response: { success: true, data: { message: "Đăng ký thành công..." } }
+   */
+  @Post('register')
+  // 201 Created — mặc định của POST, phù hợp vì tạo user mới
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  // ─── Login ─────────────────────────────────────────────────────────────
+
+  /**
+   * POST /api/v1/auth/login
+   *
+   * Đăng nhập bằng email + password.
+   * Set refresh token cookie + trả về access token trong body.
+   *
+   * Request body: { email, password }
+   * Response body: { success: true, data: { accessToken, user: { id, email, role, displayName, isNewUser } } }
+   * Cookie: refreshToken (HttpOnly, Secure, SameSite=Strict, 7 days)
+   */
+  @Post('login')
+  @HttpCode(HttpStatus.OK) // 200 — login không tạo resource mới
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+
+    // Set refresh token cookie (reuse helper — DRY)
+    this.setRefreshTokenCookie(res, result.refreshToken);
+
+    // refreshToken KHÔNG trả về trong body → chỉ có trong cookie
+    return {
+      accessToken: result.accessToken,
+      user: result.user,
+    };
+  }
 
   // ─── Request OTP ──────────────────────────────────────────────────────────
 
@@ -64,35 +118,51 @@ export class AuthController {
   /**
    * POST /api/v1/auth/otp/verify
    *
-   * Verify OTP code, trả về access token + set refresh token cookie.
-   * Nếu email chưa có user → tự động tạo user mới (auto-creation)
+   * Verify OTP code — chỉ dùng cho EMAIL VERIFICATION (sau register).
+   * Không còn trả token hay set cookie — user phải login bằng password.
+   *
+   * Before (passwordless): verify OTP → trả tokens + set cookie
+   * After (password-based): verify OTP → set emailVerified = true → trả message
    *
    * Request body: { email: string, code: string }
-   * Response body: { success: true, data: { accessToken, user: { id, email, role, isNewUser } } }
-   * Cookie: refreshToken (HttpOnly, Secure, SameSite=Strict, 7 days)
-   *
-   * @Res({ passthrough: true }) — Cho phép set cookie MÀ VẪN giữ TransformInterceptor
-   * Nếu dùng @Res() (không có passthrough) → NestJS bỏ qua interceptor → response không được wrap
+   * Response: { success: true, data: { message: "Email đã được xác thực..." } }
    */
   @Post('otp/verify')
   @HttpCode(HttpStatus.OK)
-  async verifyOtp(
-    @Body() dto: VerifyOtpDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const result = await this.authService.verifyOtp(dto.email, dto.code);
+  async verifyOtp(@Body() dto: VerifyOtpDto) {
+    return this.authService.verifyOtp(dto.email, dto.code);
+  }
 
-    // Set refresh token cookie (dùng helper method chung với OAuth)
-    this.setRefreshTokenCookie(res, result.refreshToken);
+  // ─── Forgot Password ──────────────────────────────────────────────────────
 
-    // Trả về accessToken + user trong response body
-    // refreshToken KHÔNG trả về trong body → chỉ có trong cookie
-    // → Client lưu accessToken trong memory (Zustand)
-    // → Browser tự động gửi cookie khi gọi /auth/* endpoints
-    return {
-      accessToken: result.accessToken,
-      user: result.user,
-    };
+  /**
+   * POST /api/v1/auth/forgot-password
+   *
+   * Gửi OTP để reset password. Response luôn giống nhau (anti-enumeration).
+   *
+   * Request body: { email: string }
+   * Response: { success: true, data: { message: "Nếu email tồn tại..." } }
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  // ─── Reset Password ───────────────────────────────────────────────────────
+
+  /**
+   * POST /api/v1/auth/reset-password
+   *
+   * Đổi mật khẩu bằng OTP code (sau forgot password).
+   *
+   * Request body: { email, code, newPassword }
+   * Response: { success: true, data: { message: "Mật khẩu đã được thay đổi..." } }
+   */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
   }
 
   // ─── Helper: Set refresh token cookie ─────────────────────────────────────
