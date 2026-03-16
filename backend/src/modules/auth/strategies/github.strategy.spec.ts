@@ -11,7 +11,7 @@ describe('GithubStrategy', () => {
         const config: Record<string, string> = {
           GITHUB_CLIENT_ID: 'test-client-id',
           GITHUB_CLIENT_SECRET: 'test-client-secret',
-          GITHUB_CALLBACK_URL: 'http://localhost:3001/api/v1/auth/github/callback',
+          GITHUB_CALLBACK_URL: 'http://localhost:3002/api/v1/auth/github/callback',
         };
         return config[key];
       }),

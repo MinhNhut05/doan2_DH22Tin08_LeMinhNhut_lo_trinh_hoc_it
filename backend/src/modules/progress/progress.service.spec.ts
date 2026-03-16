@@ -42,6 +42,7 @@ describe('ProgressService', () => {
         findMany: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),
+        count: jest.fn(),
       },
     };
 
@@ -92,12 +93,23 @@ describe('ProgressService', () => {
         _sum: { timeSpentSeconds: 3600 },
       });
 
+      // NEW: streak data — hôm nay có session → streak ≥ 1
+      prisma.learningSession.findMany.mockResolvedValue([
+        { startedAt: new Date() },
+      ]);
+
+      // NEW: sessions this week
+      prisma.learningSession.count.mockResolvedValue(5);
+
       const result = await service.getOverallProgress(mockUserId);
 
       expect(result.enrolledPaths).toBe(2);
       expect(result.completedPaths).toBe(1); // only path-2 has completedAt
       expect(result.totalLessonsCompleted).toBe(8);
       expect(result.totalTimeSpentSeconds).toBe(3600);
+      expect(result.totalStudyMinutes).toBe(60); // 3600s / 60 = 60min
+      expect(result.currentStreak).toBeGreaterThanOrEqual(1);
+      expect(result.sessionsThisWeek).toBe(5);
       expect(result.paths).toHaveLength(2);
       expect(result.paths[0].progress).toBe(30); // 3/10
       expect(result.paths[1].progress).toBe(100); // 5/5
@@ -116,12 +128,19 @@ describe('ProgressService', () => {
         _sum: { timeSpentSeconds: null },
       });
 
+      // NEW: no sessions → streak = 0, sessionsThisWeek = 0
+      prisma.learningSession.findMany.mockResolvedValue([]);
+      prisma.learningSession.count.mockResolvedValue(0);
+
       const result = await service.getOverallProgress(mockUserId);
 
       expect(result.enrolledPaths).toBe(0);
       expect(result.completedPaths).toBe(0);
       expect(result.totalLessonsCompleted).toBe(0);
       expect(result.totalTimeSpentSeconds).toBe(0);
+      expect(result.totalStudyMinutes).toBe(0);
+      expect(result.currentStreak).toBe(0);
+      expect(result.sessionsThisWeek).toBe(0);
       expect(result.paths).toEqual([]);
     });
   });

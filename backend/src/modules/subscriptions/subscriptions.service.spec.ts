@@ -70,7 +70,7 @@ describe('SubscriptionsService', () => {
     };
 
     configService = {
-      get: jest.fn().mockReturnValue('http://localhost:3001'),
+      get: jest.fn().mockReturnValue('http://localhost:3002'),
     };
 
     const module: TestingModule = await Test.createTestingModule({

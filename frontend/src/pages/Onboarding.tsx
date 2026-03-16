@@ -81,8 +81,13 @@ export default function Onboarding() {
 
       // Sau khi submit → lấy recommendation
       const recRes = await api.get('/onboarding/recommendation');
-      setRecommendation(recRes.data.data);
-      setStep('recommendation');
+      const recData = recRes.data.data;
+      if (recData) {
+        setRecommendation(recData);
+        setStep('recommendation');
+      } else {
+        setError('AI không trả về gợi ý. Vui lòng thử lại.');
+      }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: { message?: string } } } })
         ?.response?.data?.error?.message ?? 'Có lỗi xảy ra';
@@ -227,5 +232,17 @@ export default function Onboarding() {
     );
   }
 
-  return null;
+  // Fallback: đang loading hoặc recommendation chưa ready
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <p className="text-gray-500">Đang tải...</p>
+        {error && (
+          <div className="mt-4 bg-red-50 border border-red-200 text-red-600 rounded p-3 text-sm">
+            {error}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

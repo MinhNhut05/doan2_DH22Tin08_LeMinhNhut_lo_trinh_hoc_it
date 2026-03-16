@@ -14,6 +14,7 @@ import { LearningPathsModule } from './modules/learning-paths/index.js';
 import { LessonsModule } from './modules/lessons/index.js';
 import { ProgressModule } from './modules/progress/index.js';
 import { SubscriptionsModule } from './modules/subscriptions/index.js';
+import { DashboardModule } from './modules/dashboard/index.js';
 
 @Module({
   imports: [
@@ -68,6 +69,9 @@ import { SubscriptionsModule } from './modules/subscriptions/index.js';
 
     // SubscriptionsModule: plans, current subscription, payment history
     SubscriptionsModule,
+
+    // DashboardModule: aggregate overview data (user, paths, activity, AI quota)
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [

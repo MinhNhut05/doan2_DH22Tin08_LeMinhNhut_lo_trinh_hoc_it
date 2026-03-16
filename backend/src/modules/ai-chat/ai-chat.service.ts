@@ -162,11 +162,16 @@ export class AiChatService {
     const max = quota?.maxCount ?? 10;
     const used = quota?.usedCount ?? 0;
 
+    // TODO: doc tier thuc tu Subscription khi branch payment hoan thanh
+    // Tam thoi: tat ca users deu la 'free' tier
+    const tier = 'free';
+
     return {
       date: today.toISOString().split('T')[0],
       used,
-      max,
+      limit: max,       // đổi tên từ "max" → "limit" để match dashboard expectation
       remaining: Math.max(0, max - used),
+      tier,             // NEW: tier của user
     };
   }
 

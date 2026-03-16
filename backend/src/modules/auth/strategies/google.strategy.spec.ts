@@ -11,7 +11,7 @@ describe('GoogleStrategy', () => {
         const config: Record<string, string> = {
           GOOGLE_CLIENT_ID: 'test-client-id',
           GOOGLE_CLIENT_SECRET: 'test-client-secret',
-          GOOGLE_CALLBACK_URL: 'http://localhost:3001/api/v1/auth/google/callback',
+          GOOGLE_CALLBACK_URL: 'http://localhost:3002/api/v1/auth/google/callback',
         };
         return config[key];
       }),

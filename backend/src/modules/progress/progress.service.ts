@@ -38,8 +38,18 @@ export class ProgressService {
       },
     });
 
+    // Tính mốc thời gian cho streak và sessionsThisWeek
+    const now = new Date();
+    const ninetyDaysAgo = new Date(now);
+    ninetyDaysAgo.setUTCDate(ninetyDaysAgo.getUTCDate() - 90);
+    ninetyDaysAgo.setUTCHours(0, 0, 0, 0);
+
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setUTCDate(sevenDaysAgo.getUTCDate() - 7);
+    sevenDaysAgo.setUTCHours(0, 0, 0, 0);
+
     // Step 2 & 3: Song song — tính progress từng path + global stats
-    const [pathsWithProgress, totalLessonsCompleted, timeResult] =
+    const [pathsWithProgress, totalLessonsCompleted, timeResult, streakData, sessionsThisWeek] =
       await Promise.all([
         // Tính % completion cho mỗi path (N queries, chạy song song)
         Promise.all(
@@ -72,6 +82,8 @@ export class ProgressService {
               pathId: up.learningPathId,
               pathName: up.learningPath.name,
               progress,
+              completedLessons,
+              totalLessons,
               currentLesson: up.currentLesson
                 ? {
                     id: up.currentLesson.id,
@@ -95,13 +107,54 @@ export class ProgressService {
           where: { userId },
           _sum: { timeSpentSeconds: true },
         }),
+
+        // NEW: LearningSession 90 ngày gần nhất để tính streak
+        this.prisma.learningSession.findMany({
+          where: { userId, startedAt: { gte: ninetyDaysAgo } },
+          select: { startedAt: true },
+          orderBy: { startedAt: 'desc' },
+        }),
+
+        // NEW: đếm sessions trong 7 ngày gần nhất
+        this.prisma.learningSession.count({
+          where: { userId, startedAt: { gte: sevenDaysAgo } },
+        }),
       ]);
+
+    // Tính currentStreak từ streakData
+    // Extract unique dates (YYYY-MM-DD UTC), đã sort desc từ query
+    const uniqueDates = [
+      ...new Set(streakData.map((s) => s.startedAt.toISOString().split('T')[0])),
+    ];
+
+    let currentStreak = 0;
+    const today = now.toISOString().split('T')[0];
+    let expected = today;
+
+    for (const date of uniqueDates) {
+      if (date === expected) {
+        currentStreak++;
+        // Lùi expected 1 ngày
+        const d = new Date(expected);
+        d.setUTCDate(d.getUTCDate() - 1);
+        expected = d.toISOString().split('T')[0];
+      } else if (date < expected) {
+        // Gap > 1 ngày → streak kết thúc
+        break;
+      }
+      // date > expected: bỏ qua (tương lai, không thể xảy ra nhưng phòng hờ)
+    }
+
+    const totalTimeSpentSeconds = timeResult._sum.timeSpentSeconds ?? 0;
 
     return {
       enrolledPaths: userPaths.length,
       completedPaths: userPaths.filter((up) => up.completedAt !== null).length,
       totalLessonsCompleted,
-      totalTimeSpentSeconds: timeResult._sum.timeSpentSeconds ?? 0,
+      totalTimeSpentSeconds,
+      totalStudyMinutes: Math.round(totalTimeSpentSeconds / 60),  // NEW
+      currentStreak,                                               // NEW
+      sessionsThisWeek,                                            // NEW
       paths: pathsWithProgress,
     };
   }
