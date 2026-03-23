@@ -38,10 +38,10 @@ created: 2026-03-23
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | STAB-01 | integration | `cd frontend && pnpm test -- auth-refresh` | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | STAB-02 | integration | `cd frontend && pnpm test -- auth-restore` | ❌ W0 | ⬜ pending |
-| 03-02-01 | 02 | 1 | STAB-03 | integration | `cd frontend && pnpm test -- state-consistency` | ❌ W0 | ⬜ pending |
-| 03-03-01 | 03 | 2 | STAB-04 | unit | `cd frontend && pnpm test -- vietnamese-ux` | ❌ W0 | ⬜ pending |
+| 03-01-01 | 01 | 0 | STAB-01 | integration | `cd frontend && pnpm test -- auth-refresh` | ❌ W0 | ⬜ pending |
+| 03-01-02 | 02 | 1 | STAB-02 | integration | `cd frontend && pnpm test -- auth-restore` | ❌ W0 | ⬜ pending |
+| 03-02-01 | 03 | 2 | STAB-04 | integration | `cd frontend && pnpm test -- state-consistency` | ❌ W0 | ⬜ pending |
+| 03-03-01 | 04 | 2 | STAB-03 | unit | `cd frontend && pnpm test -- vietnamese-ux` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
