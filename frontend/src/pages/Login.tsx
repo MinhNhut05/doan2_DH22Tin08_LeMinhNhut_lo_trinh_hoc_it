@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api, { resetSessionExpiredGuard } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
+import { vi } from '../strings/vi';
 
 const EASE_SMOOTH = [0.16, 1, 0.3, 1] as const;
 
@@ -51,7 +52,7 @@ function Divider() {
   return (
     <div className="flex items-center my-5 gap-3">
       <div className="flex-1 h-px bg-dp-border-subtle" />
-      <span className="text-xs text-dp-text-ghost whitespace-nowrap">hoac</span>
+      <span className="text-xs text-dp-text-ghost whitespace-nowrap">{vi.common.or}</span>
       <div className="flex-1 h-px bg-dp-border-subtle" />
     </div>
   );
@@ -72,7 +73,7 @@ function OAuthButtons() {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
         </svg>
-        Tiep tuc voi Google
+        {vi.auth.continueWithGoogle}
       </button>
 
       <button
@@ -83,7 +84,7 @@ function OAuthButtons() {
         <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
         </svg>
-        Tiep tuc voi GitHub
+        {vi.auth.continueWithGithub}
       </button>
     </div>
   );
@@ -117,7 +118,7 @@ function PasswordInput({
         type="button"
         onClick={onToggle}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-dp-text-ghost hover:text-dp-text-secondary transition-colors"
-        aria-label={show ? 'An mat khau' : 'Hien mat khau'}
+        aria-label={show ? vi.auth.hidePassword : vi.auth.showPassword}
       >
         {show ? <EyeOff size={18} /> : <Eye size={18} />}
       </button>
@@ -134,9 +135,9 @@ function PasswordStrength({ password }: { password: string }) {
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    if (score <= 1) return { level: 1, label: 'Yeu', color: 'bg-dp-error' };
-    if (score <= 2) return { level: 2, label: 'Trung binh', color: 'bg-dp-warning' };
-    return { level: 3, label: 'Manh', color: 'bg-dp-success' };
+    if (score <= 1) return { level: 1, label: vi.auth.passwordStrengthWeak, color: 'bg-dp-error' };
+    if (score <= 2) return { level: 2, label: vi.auth.passwordStrengthMedium, color: 'bg-dp-warning' };
+    return { level: 3, label: vi.auth.passwordStrengthStrong, color: 'bg-dp-success' };
   }, [password]);
 
   if (!password) return null;
@@ -218,7 +219,7 @@ export default function AuthPage() {
       setAuth(accessToken, user);
       navigate(user.isNewUser ? '/onboarding' : '/dashboard');
     } catch (err) {
-      setLoginError(getErrMsg(err, 'Email hoac mat khau khong dung'));
+      setLoginError(getErrMsg(err, vi.auth.loginError));
     } finally {
       setLoginLoading(false);
     }
@@ -233,10 +234,10 @@ export default function AuthPage() {
     setForgotInfo('');
     try {
       await api.post('/auth/forgot-password', { email: forgotEmail });
-      setForgotInfo('Da gui ma OTP den email cua ban!');
+      setForgotInfo(vi.auth.otpSent);
       setForgotStep('otp');
     } catch (err) {
-      setForgotError(getErrMsg(err, 'Khong the gui email. Kiem tra lai dia chi email.'));
+      setForgotError(getErrMsg(err, vi.auth.emailSendError));
     } finally {
       setForgotLoading(false);
     }
@@ -245,7 +246,7 @@ export default function AuthPage() {
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
     if (forgotNewPassword !== forgotConfirmPassword) {
-      setForgotError('Mat khau xac nhan khong khop');
+      setForgotError(vi.auth.passwordMismatch);
       return;
     }
     setForgotLoading(true);
@@ -258,7 +259,7 @@ export default function AuthPage() {
       });
       setForgotStep('done');
     } catch (err) {
-      setForgotError(getErrMsg(err, 'Ma OTP khong dung hoac da het han'));
+      setForgotError(getErrMsg(err, vi.auth.otpInvalid));
     } finally {
       setForgotLoading(false);
     }
@@ -280,7 +281,7 @@ export default function AuthPage() {
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     if (regPassword !== regConfirmPassword) {
-      setRegError('Mat khau xac nhan khong khop');
+      setRegError(vi.auth.passwordMismatch);
       return;
     }
     setRegLoading(true);
@@ -292,10 +293,10 @@ export default function AuthPage() {
         displayName: regDisplayName,
       });
       setStoredRegEmail(regEmail);
-      setRegInfo('Da gui ma OTP den email cua ban!');
+      setRegInfo(vi.auth.otpSent);
       setRegisterStep('verify-otp');
     } catch (err) {
-      setRegError(getErrMsg(err, 'Dang ky that bai. Email co the da duoc dung.'));
+      setRegError(getErrMsg(err, vi.auth.registerError));
     } finally {
       setRegLoading(false);
     }
@@ -318,7 +319,7 @@ export default function AuthPage() {
       setActiveTab('login');
       setLoginError('');
     } catch (err) {
-      setRegError(getErrMsg(err, 'OTP khong dung hoac da het han'));
+      setRegError(getErrMsg(err, vi.auth.otpInvalidShort));
     } finally {
       setRegLoading(false);
     }
@@ -330,9 +331,9 @@ export default function AuthPage() {
     setRegInfo('');
     try {
       await api.post('/auth/otp/request', { email: storedRegEmail });
-      setRegInfo('Da gui lai ma OTP!');
+      setRegInfo(vi.auth.otpResent);
     } catch (err) {
-      setRegError(getErrMsg(err, 'Khong the gui lai OTP'));
+      setRegError(getErrMsg(err, vi.auth.resendOtpError));
     } finally {
       setRegLoading(false);
     }
@@ -375,7 +376,7 @@ export default function AuthPage() {
           <h1 className="text-3xl font-bold">
             <span className="gradient-text">DevPath</span>
           </h1>
-          <p className="text-dp-text-muted text-sm mt-1">Lo trinh hoc IT ca nhan hoa</p>
+          <p className="text-dp-text-muted text-sm mt-1">{vi.auth.subtitle}</p>
         </div>
 
         {/* Tab buttons */}
@@ -389,7 +390,7 @@ export default function AuthPage() {
                 : 'text-dp-text-muted hover:text-dp-text-secondary border border-transparent'
             }`}
           >
-            Dang nhap
+            {vi.auth.loginTitle}
           </button>
           <button
             type="button"
@@ -400,7 +401,7 @@ export default function AuthPage() {
                 : 'text-dp-text-muted hover:text-dp-text-secondary border border-transparent'
             }`}
           >
-            Dang ky
+            {vi.auth.registerTitle}
           </button>
         </div>
 
@@ -424,7 +425,7 @@ export default function AuthPage() {
                   <form onSubmit={handleLogin} className="space-y-4">
                     <input
                       type="email"
-                      placeholder="Email"
+                      placeholder={vi.auth.emailPlaceholder}
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
@@ -434,7 +435,7 @@ export default function AuthPage() {
                     <PasswordInput
                       value={loginPassword}
                       onChange={setLoginPassword}
-                      placeholder="Mat khau"
+                      placeholder={vi.auth.passwordPlaceholder}
                       show={showLoginPassword}
                       onToggle={() => setShowLoginPassword((v) => !v)}
                     />
@@ -444,7 +445,7 @@ export default function AuthPage() {
                       disabled={loginLoading}
                       className="btn-primary w-full h-11 disabled:opacity-40"
                     >
-                      {loginLoading ? 'Dang dang nhap...' : 'Dang nhap'}
+                      {loginLoading ? vi.auth.loginLoading : vi.auth.loginButton}
                     </button>
                   </form>
 
@@ -453,7 +454,7 @@ export default function AuthPage() {
                     onClick={() => { setShowForgotPassword(true); setLoginError(''); }}
                     className="block w-full text-center text-sm text-dp-primary/70 hover:text-dp-primary hover:underline mt-3 transition-colors"
                   >
-                    Quen mat khau?
+                    {vi.auth.forgotPassword}
                   </button>
 
                   <Divider />
@@ -467,11 +468,11 @@ export default function AuthPage() {
                       type="button"
                       onClick={resetForgotFlow}
                       className="text-dp-text-ghost hover:text-dp-text-secondary text-xl leading-none transition-colors"
-                      aria-label="Quay lai"
+                      aria-label={vi.auth.backToLogin}
                     >
                       &larr;
                     </button>
-                    <h2 className="font-semibold text-dp-text-primary text-sm">Quen mat khau</h2>
+                    <h2 className="font-semibold text-dp-text-primary text-sm">{vi.auth.forgotPasswordTitle}</h2>
                   </div>
 
                   {forgotError && <Alert type="error" msg={forgotError} />}
@@ -481,18 +482,18 @@ export default function AuthPage() {
                   {forgotStep === 'email' && (
                     <form onSubmit={handleForgotEmail} className="space-y-4">
                       <p className="text-sm text-dp-text-muted">
-                        Nhap email de nhan ma OTP dat lai mat khau.
+                        {vi.auth.forgotPasswordDesc}
                       </p>
                       <input
                         type="email"
-                        placeholder="Email da dang ky"
+                        placeholder={vi.auth.emailRegisteredPlaceholder}
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
                         required
                         className={inputCls}
                       />
                       <button type="submit" disabled={forgotLoading} className="btn-primary w-full h-11 disabled:opacity-40">
-                        {forgotLoading ? 'Dang gui...' : 'Gui ma OTP'}
+                        {forgotLoading ? vi.auth.sendingOtp : vi.auth.sendOtp}
                       </button>
                     </form>
                   )}
@@ -501,7 +502,7 @@ export default function AuthPage() {
                   {forgotStep === 'otp' && (
                     <div className="space-y-4">
                       <p className="text-sm text-dp-text-muted">
-                        Nhap ma 6 chu so da gui den <strong className="text-dp-text-secondary">{forgotEmail}</strong>
+                        {vi.auth.enterOtp} <strong className="text-dp-text-secondary">{forgotEmail}</strong>
                       </p>
                       <input
                         type="text"
@@ -517,7 +518,7 @@ export default function AuthPage() {
                         disabled={forgotCode.length < 6}
                         className="btn-primary w-full h-11 disabled:opacity-40"
                       >
-                        Xac nhan ma
+                        {vi.auth.confirmCode}
                       </button>
                     </div>
                   )}
@@ -525,24 +526,24 @@ export default function AuthPage() {
                   {/* Step 3: New password */}
                   {forgotStep === 'new-password' && (
                     <form onSubmit={handleResetPassword} className="space-y-4">
-                      <p className="text-sm text-dp-text-muted">Nhap mat khau moi cua ban.</p>
+                      <p className="text-sm text-dp-text-muted">{vi.auth.enterNewPassword}</p>
                       <PasswordInput
                         value={forgotNewPassword}
                         onChange={setForgotNewPassword}
-                        placeholder="Mat khau moi"
+                        placeholder={vi.auth.newPasswordPlaceholder}
                         show={showForgotPassword2}
                         onToggle={() => setShowForgotPassword2((v) => !v)}
                       />
                       <input
                         type={showForgotPassword2 ? 'text' : 'password'}
-                        placeholder="Xac nhan mat khau moi"
+                        placeholder={vi.auth.confirmNewPasswordPlaceholder}
                         value={forgotConfirmPassword}
                         onChange={(e) => setForgotConfirmPassword(e.target.value)}
                         required
                         className={inputCls}
                       />
                       <button type="submit" disabled={forgotLoading} className="btn-primary w-full h-11 disabled:opacity-40">
-                        {forgotLoading ? 'Dang dat lai...' : 'Dat lai mat khau'}
+                        {forgotLoading ? vi.auth.resettingPassword : vi.auth.resetPassword}
                       </button>
                     </form>
                   )}
@@ -553,10 +554,10 @@ export default function AuthPage() {
                       <div className="w-16 h-16 rounded-full bg-dp-success/15 flex items-center justify-center mx-auto">
                         <span className="text-3xl">&#10003;</span>
                       </div>
-                      <p className="text-dp-text-primary font-medium">Doi mat khau thanh cong!</p>
-                      <p className="text-dp-text-muted text-sm">Ban co the dang nhap voi mat khau moi.</p>
+                      <p className="text-dp-text-primary font-medium">{vi.auth.resetSuccess}</p>
+                      <p className="text-dp-text-muted text-sm">{vi.auth.resetSuccessDesc}</p>
                       <button type="button" onClick={resetForgotFlow} className="btn-primary w-full h-11">
-                        Quay lai dang nhap
+                        {vi.auth.backToLogin}
                       </button>
                     </div>
                   )}
@@ -585,7 +586,7 @@ export default function AuthPage() {
                   <form onSubmit={handleRegister} className="space-y-4">
                     <input
                       type="text"
-                      placeholder="Ten hien thi"
+                      placeholder={vi.auth.displayNamePlaceholder}
                       value={regDisplayName}
                       onChange={(e) => setRegDisplayName(e.target.value)}
                       required
@@ -593,7 +594,7 @@ export default function AuthPage() {
                     />
                     <input
                       type="email"
-                      placeholder="Email"
+                      placeholder={vi.auth.emailPlaceholder}
                       value={regEmail}
                       onChange={(e) => setRegEmail(e.target.value)}
                       required
@@ -602,14 +603,14 @@ export default function AuthPage() {
                     <PasswordInput
                       value={regPassword}
                       onChange={setRegPassword}
-                      placeholder="Mat khau"
+                      placeholder={vi.auth.passwordPlaceholder}
                       show={regShowPassword}
                       onToggle={() => setRegShowPassword((v) => !v)}
                     />
                     <PasswordStrength password={regPassword} />
                     <input
                       type={regShowPassword ? 'text' : 'password'}
-                      placeholder="Xac nhan mat khau"
+                      placeholder={vi.auth.confirmPasswordPlaceholder}
                       value={regConfirmPassword}
                       onChange={(e) => setRegConfirmPassword(e.target.value)}
                       required
@@ -620,7 +621,7 @@ export default function AuthPage() {
                       disabled={regLoading}
                       className="btn-primary w-full h-11 disabled:opacity-40"
                     >
-                      {regLoading ? 'Dang dang ky...' : 'Dang ky'}
+                      {regLoading ? vi.auth.registerLoading : vi.auth.registerButton}
                     </button>
                   </form>
 
@@ -633,7 +634,7 @@ export default function AuthPage() {
               {registerStep === 'verify-otp' && (
                 <div className="space-y-4">
                   <p className="text-sm text-dp-text-muted">
-                    Nhap ma 6 chu so da gui den <strong className="text-dp-text-secondary">{storedRegEmail}</strong>
+                    {vi.auth.enterOtp} <strong className="text-dp-text-secondary">{storedRegEmail}</strong>
                   </p>
                   <form onSubmit={handleVerifyRegOtp} className="space-y-4">
                     <input
@@ -649,7 +650,7 @@ export default function AuthPage() {
                       disabled={regLoading || regOtpCode.length < 6}
                       className="btn-primary w-full h-11 disabled:opacity-40"
                     >
-                      {regLoading ? 'Dang xac nhan...' : 'Xac nhan OTP'}
+                      {regLoading ? vi.auth.confirmingOtp : vi.auth.confirmOtpButton}
                     </button>
                   </form>
 
@@ -659,7 +660,7 @@ export default function AuthPage() {
                     disabled={regLoading}
                     className="w-full text-sm text-dp-primary/70 hover:text-dp-primary hover:underline disabled:opacity-50 transition-colors"
                   >
-                    Gui lai ma
+                    {vi.auth.resendOtp}
                   </button>
 
                   <button
@@ -672,7 +673,7 @@ export default function AuthPage() {
                     }}
                     className="w-full text-sm text-dp-text-ghost hover:text-dp-text-secondary transition-colors"
                   >
-                    &larr; Quay lai
+                    &larr; {vi.auth.backToLogin}
                   </button>
                 </div>
               )}
