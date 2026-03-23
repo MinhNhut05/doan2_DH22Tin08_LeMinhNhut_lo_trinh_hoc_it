@@ -1,109 +1,153 @@
-# Requirements: SOHA Program Summarizer
+# Requirements: DevPath Learning v1.1
 
 **Defined:** 2026-03-22
-**Core Value:** Turn a 4-page detailed program into a polished 1-2 page Canva design in seconds, with correct formatting rules applied automatically.
+**Core Value:** Guide each learner to the right next step with a stable, personalized learning experience that matches their goals, current level, and progress.
 
 ## v1 Requirements
 
-Requirements for initial release. Each maps to roadmap phases.
+Requirements for milestone v1.1 — Post-MVP Stabilization & Personalization.
 
-### File Processing
+### Stability
 
-- [ ] **FILE-01**: User can upload PDF file and system extracts text content accurately (Vietnamese)
-- [ ] **FILE-02**: User can upload DOCX file and system extracts text content accurately (Vietnamese)
-- [ ] **FILE-03**: User can preview extracted content to verify parsing accuracy before proceeding
+- [ ] **STAB-01**: User can refresh any protected page with a valid session and stay signed in
+- [ ] **STAB-02**: User can open the app or return to a protected route without false login redirects while auth state is loading
+- [ ] **STAB-03**: User sees correct Vietnamese text with proper diacritics and natural wording across all user-facing screens
+- [ ] **STAB-04**: Existing progress, enrollment, and continue-learning data is consistent and free of stale/contradictory state across dashboard, explore, lesson, and quiz flows (data correctness bugs only — new main-path prioritization behavior is covered by LP-10)
 
-### AI Summarization
+### Onboarding
 
-- [ ] **SUMM-01**: System summarizes detailed program (2-6 pages) into condensed format (1-2 pages) using AI
-- [ ] **SUMM-02**: System applies company formatting rules automatically (greeting type, day/session layout, menu section)
-- [ ] **SUMM-03**: System auto-detects audience type (school vs corporate) from file content and applies correct greeting
-- [ ] **SUMM-04**: User can preview and edit summarized content before Canva design creation
-- [ ] **SUMM-05**: System shows progress/loading state during summarization (10-30 seconds)
+- [ ] **ONB-04**: User can resume an unfinished onboarding flow from the last incomplete round
+- [ ] **ONB-05**: User can complete onboarding round 1 for basic profile information
+- [ ] **ONB-06**: User can complete onboarding round 2 for career goals and direction
+- [ ] **ONB-07**: User can complete onboarding round 3 for current skill assessment
+- [ ] **ONB-08**: User can complete onboarding round 4 to confirm or adjust a recommended main path
+- [ ] **ONB-09**: User can complete onboarding round 5 to calibrate the profile after early learning progress
+- [ ] **ONB-10**: Later onboarding rounds appear after lesson milestones instead of forcing all rounds at first login
 
-### Canva Integration
+### Learner Profile
 
-- [ ] **CANV-01**: User can select from fixed templates (1-day tour, 2-day tour, school event, corporate event)
-- [ ] **CANV-02**: System creates Canva design from selected template via Canva Connect API with summarized content
-- [ ] **CANV-03**: System returns editable Canva link that user can click to edit directly in Canva
+- [ ] **PROF-01**: System stores a canonical learner profile that combines onboarding answers and observed learning signals
+- [ ] **PROF-02**: System persists onboarding answers per round so they can be reused for later recommendations and profile updates
+- [ ] **PROF-03**: System recalculates learner profile after relevant lesson milestones to support later onboarding rounds and recommendation updates
 
-### User Management
+### Path Guidance
 
-- [ ] **USER-01**: User can log in with provisioned account (no public registration)
-- [ ] **USER-02**: User can log out from any page
-- [ ] **USER-03**: User can view history of generated designs (filename, template, date, Canva link)
-- [ ] **USER-04**: System shows clear, human-readable error messages for all failure cases
+- [ ] **LP-07**: User can view the top 3 ranked learning path recommendations with a short explanation for each
+- [ ] **LP-08**: User has exactly one main learning path at a time while off-path learning remains available as secondary activity
+- [ ] **LP-09**: User can switch main path at any time without losing previous learning history
+- [ ] **LP-10**: Dashboard and continue-learning UI prioritize the current main path over secondary paths
 
-### Admin
+### AI Chat
 
-- [ ] **ADMN-01**: Admin can create/edit/delete summarization rules (trigger condition -> action)
-- [ ] **ADMN-02**: Admin can manage Canva template IDs (map template type to Canva template)
-- [ ] **ADMN-03**: Admin can provision user accounts (create/disable)
+- [ ] **AI-08**: AI chat uses learner profile and main-path context to tailor tone and response context
 
-## v2 Requirements
+### Leaderboard
 
-Deferred to future release. Tracked but not in current roadmap.
-
-### Advanced Processing
-
-- **ADVP-01**: System can handle scanned PDFs via OCR
-- **ADVP-02**: System supports batch upload (multiple files at once)
-- **ADVP-03**: System supports additional file formats (PPT, Google Docs)
+- [ ] **LEAD-01**: User earns leaderboard points from lesson completion events (point awards must be idempotent — replayed events must not inflate scores)
+- [ ] **LEAD-02**: User can view a global leaderboard showing points and rank
 
 ### Notifications
 
-- **NOTF-01**: User receives notification when design is ready (if async processing)
-- **NOTF-02**: Admin receives notification of generation errors
+- [ ] **NOTF-01**: User can see in-app notifications in a dashboard notification block
+- [ ] **NOTF-02**: System creates notifications for key learning events such as lesson completion, next lesson unlock, and learning milestones (notification creation must be idempotent — one source event produces at most one notification)
 
-### Analytics
+### Payment
 
-- **ANLT-01**: Admin can view usage dashboard (generations per user, per template)
-- **ANLT-02**: Admin can view error rate and common failure types
+- [ ] **PAY-08**: User can initiate plan upgrade through a backend-created gateway payment flow
+- [ ] **PAY-09**: System activates a paid tier only after verified backend confirmation of gateway payment (activation must be idempotent — duplicate provider callbacks must not double-activate)
+- [ ] **PAY-10**: User can view real bank transfer payment information in the upgrade flow, served from backend configuration (never hardcoded in frontend code)
+- [ ] **PAY-11**: Bank-transfer upgrades remain pending until manually verified
+- [ ] **PAY-12**: Payment result UI reads backend-confirmed order status instead of trusting return URL parameters
+
+### Frontend Content
+
+- [ ] **CONT-01**: User can follow the recommended Frontend main path without hitting critical missing lessons in the primary journey
+- [ ] **CONT-02**: Frontend main path includes enough core content for recommendation, continue-learning, and early milestone notifications to make sense
+
+## v2 Requirements
+
+Deferred beyond milestone v1.1.
+
+### Onboarding
+
+- **ONB-11**: System can open additional adaptive onboarding rounds beyond the initial 5 when confidence is still low
+
+### AI Chat
+
+- **AI-09**: AI chat proactively coaches the user with deeper personalized study guidance beyond tone and context adaptation
+
+### Notifications
+
+- **NOTF-03**: User can manage notification preferences and categories
+- **NOTF-04**: System can deliver notifications through channels beyond in-app feed
+
+### Leaderboard
+
+- **LEAD-03**: User can view leaderboard slices such as weekly ranking or path-specific ranking
+
+### Payment
+
+- **PAY-13**: Bank-transfer upgrades can be auto-reconciled without manual verification
+
+### Content
+
+- **CONT-03**: Users can access significantly expanded content across Backend, Fullstack, and cross-path topics beyond critical Frontend gaps
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
-
 | Feature | Reason |
 |---------|--------|
-| Direct PDF/image export from web app | Canva handles export better; avoids duplicating Canva's core functionality |
-| Mobile app | Internal ops tool; file upload from phone is impractical; desktop-first |
-| Real-time collaboration | Canva already provides collaboration on shared edit links |
-| Public signup / self-registration | Internal tool; controlled access via admin provisioning only |
-| Custom Canva template builder in app | Canva is already the template editor; just manage template IDs |
-| Webhook / API public endpoint | Premature for internal tool; add explicit integration later if needed |
-| Design versioning in app | Canva already has version history; app tracks by generation event |
+| Hard-lock all non-main-path content | Conflicts with the chosen soft-guidance product direction |
+| Friends/team/social leaderboard | Adds social graph, privacy, and moderation scope beyond v1.1 |
+| Email/SMS/push notification rollout | In-app notification usefulness must be proven first |
+| Fully autonomous AI curriculum replanning every session | Too unstable and hard to debug for a stability-first milestone |
+| Client-side storage of payment recipient config or secrets | Sensitive payment configuration must remain backend-managed |
+| Broad content expansion across all tracks | This milestone only fills critical Frontend-path gaps |
+| Gamification layers like streak systems, badges, leagues, and seasonal events | Over-expands scope before baseline stability and clarity are fixed |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FILE-01 | - | Pending |
-| FILE-02 | - | Pending |
-| FILE-03 | - | Pending |
-| SUMM-01 | - | Pending |
-| SUMM-02 | - | Pending |
-| SUMM-03 | - | Pending |
-| SUMM-04 | - | Pending |
-| SUMM-05 | - | Pending |
-| CANV-01 | - | Pending |
-| CANV-02 | - | Pending |
-| CANV-03 | - | Pending |
-| USER-01 | - | Pending |
-| USER-02 | - | Pending |
-| USER-03 | - | Pending |
-| USER-04 | - | Pending |
-| ADMN-01 | - | Pending |
-| ADMN-02 | - | Pending |
-| ADMN-03 | - | Pending |
+| STAB-01 | Phase 3 | Pending |
+| STAB-02 | Phase 3 | Pending |
+| STAB-03 | Phase 3 | Pending |
+| STAB-04 | Phase 3 | Pending |
+| PROF-01 | Phase 4 | Pending |
+| PROF-02 | Phase 4 | Pending |
+| PROF-03 | Phase 4 | Pending |
+| ONB-04 | Phase 5 | Pending |
+| ONB-05 | Phase 5 | Pending |
+| ONB-06 | Phase 5 | Pending |
+| ONB-07 | Phase 5 | Pending |
+| ONB-08 | Phase 6 | Pending |
+| ONB-09 | Phase 6 | Pending |
+| ONB-10 | Phase 6 | Pending |
+| LP-07 | Phase 6 | Pending |
+| LP-08 | Phase 6 | Pending |
+| LP-09 | Phase 6 | Pending |
+| LP-10 | Phase 6 | Pending |
+| AI-08 | Phase 6 | Pending |
+| CONT-01 | Phase 6 | Pending |
+| CONT-02 | Phase 6 | Pending |
+| NOTF-01 | Phase 7 | Pending |
+| NOTF-02 | Phase 7 | Pending |
+| LEAD-01 | Phase 8 | Pending |
+| LEAD-02 | Phase 8 | Pending |
+| PAY-08 | Phase 9 | Pending |
+| PAY-09 | Phase 9 | Pending |
+| PAY-10 | Phase 9 | Pending |
+| PAY-11 | Phase 9 | Pending |
+| PAY-12 | Phase 9 | Pending |
 
 **Coverage:**
-- v1 requirements: 18 total
-- Mapped to phases: 0
-- Unmapped: 18
+- v1 requirements: 30 total
+- Mapped to phases: 30
+- Unmapped: 0
+- Coverage status: 100% mapped
 
 ---
 *Requirements defined: 2026-03-22*
-*Last updated: 2026-03-22 after initial definition*
+*Last updated: 2026-03-23 — added roadmap traceability for Phases 3-9*
