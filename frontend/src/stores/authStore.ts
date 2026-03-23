@@ -4,16 +4,20 @@ interface User {
   id: string;
   email: string;
   role: string;
-  displayName?: string;  // tên hiển thị (optional, từ register)
-  isNewUser?: boolean;   // dùng để navigate sau login: true → /onboarding
+  displayName?: string; // tên hiển thị (optional, từ register)
+  isNewUser?: boolean; // dùng để navigate sau login: true → /onboarding
 }
 
 interface AuthState {
   accessToken: string | null;
   user: User | null;
+  isLoading: boolean;
+  hasBootstrapped: boolean;
   setAuth: (token: string, user: User) => void;
   setToken: (token: string) => void;
   setUser: (user: User) => void;
+  setLoading: (loading: boolean) => void;
+  setBootstrapped: () => void;
   logout: () => void;
 }
 
@@ -22,9 +26,13 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set) => ({
   accessToken: null,
   user: null,
+  isLoading: true,
+  hasBootstrapped: false,
 
   setAuth: (token, user) => set({ accessToken: token, user }),
   setToken: (token) => set({ accessToken: token }),
   setUser: (user) => set({ user }),
+  setLoading: (loading) => set({ isLoading: loading }),
+  setBootstrapped: () => set({ hasBootstrapped: true, isLoading: false }),
   logout: () => set({ accessToken: null, user: null }),
 }));
