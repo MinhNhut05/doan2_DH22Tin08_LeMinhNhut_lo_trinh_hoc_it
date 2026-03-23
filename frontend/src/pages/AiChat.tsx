@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Bot, Send } from 'lucide-react';
+import { Bot, Send } from 'lucide-react';
 import api from '../services/api';
+import { vi } from '../strings/vi';
 
 // ─── TypeScript Interfaces ────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ export default function AiChat() {
         // Backend trả về desc (mới nhất trước) → reverse để hiển thị đúng thứ tự
         setMessages(historyMessages.reverse());
       })
-      .catch(() => setError('Không tải được dữ liệu. Vui lòng thử lại.'))
+      .catch(() => setError(vi.aiChat.loadError))
       .finally(() => setLoading(false));
   }, []);
 
@@ -84,7 +84,7 @@ export default function AiChat() {
       const aiMsg: Message = {
         id: Date.now().toString() + '-ai',
         role: 'assistant',
-        content: aiReply.message ?? aiReply.reply ?? 'Không có phản hồi',
+        content: aiReply.message ?? aiReply.reply ?? vi.aiChat.noResponse,
         createdAt: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, aiMsg]);
@@ -93,7 +93,7 @@ export default function AiChat() {
         prev ? { ...prev, remaining: prev.remaining - 1, used: prev.used + 1 } : prev
       );
     } catch {
-      setError('Gửi thất bại. Thử lại nhé!');
+      setError(vi.aiChat.sendError);
     } finally {
       setSending(false);
     }
@@ -119,121 +119,114 @@ export default function AiChat() {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <p className="text-gray-400 dark:text-gray-500">Đang tải...</p>
+      <div className="flex items-center justify-center h-full">
+        <p className="text-dp-text-muted">{vi.common.loading}</p>
       </div>
     );
   }
 
   // ── Main render ─────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex flex-col h-full">
 
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <header className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-3 flex items-center justify-between shrink-0 shadow-sm dark:shadow-gray-900/20">
-        {/* Nút quay lại */}
-        <Link
-          to="/dashboard"
-          className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-        >
-          <ArrowLeft size={16} />
-          Dashboard
-        </Link>
-
+      <header className="glass border-b border-dp-border px-4 py-3 flex items-center justify-between shrink-0">
         {/* Tiêu đề */}
         <div className="flex items-center gap-2">
-          <Bot size={18} className="text-purple-600 dark:text-purple-400" />
-          <span className="font-semibold text-gray-800 dark:text-gray-100">Trợ lý AI</span>
+          <Bot size={18} className="text-dp-secondary" />
+          <h1 className="font-semibold text-dp-text-primary">{vi.aiChat.title}</h1>
         </div>
 
         {/* Quota badge */}
         {quota !== null && (
-          <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-            {quota.remaining} câu còn lại
+          <span className="badge badge-primary">
+            {quota.remaining} {vi.aiChat.quotaRemaining}
           </span>
         )}
       </header>
 
       {/* ── Quota-exhausted banner ───────────────────────────────────────────── */}
       {quota?.remaining === 0 && (
-        <div className="bg-yellow-50 border-b border-yellow-200 px-4 py-2.5 text-center text-sm text-yellow-700 shrink-0">
-          ⚠️ Bạn đã dùng hết quota hôm nay. Quay lại vào ngày mai nhé!
+        <div className="glass border-b border-l-4 border-l-dp-warning border-b-dp-border px-4 py-2.5 text-center text-sm text-dp-warning shrink-0">
+          {vi.aiChat.quotaExhausted}
         </div>
       )}
 
       {/* ── Error banner ─────────────────────────────────────────────────────── */}
       {error && (
-        <div className="bg-red-50 border-b border-red-200 px-4 py-2.5 text-center text-sm text-red-600 shrink-0">
+        <div className="glass border-b border-l-4 border-l-dp-error border-b-dp-border px-4 py-2.5 text-center text-sm text-dp-error shrink-0">
           {error}
         </div>
       )}
 
       {/* ── Messages area (scrollable) ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <div className="max-w-3xl mx-auto space-y-3">
 
-        {/* Empty state — chưa có tin nhắn nào */}
-        {messages.length === 0 && !sending && (
-          <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-            <div className="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
-              <Bot size={28} className="text-purple-600 dark:text-purple-400" />
+          {/* Empty state — chưa có tin nhắn nào */}
+          {messages.length === 0 && !sending && (
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
+              <div className="w-14 h-14 bg-dp-secondary/15 rounded-full flex items-center justify-center">
+                <Bot size={28} className="text-dp-secondary" />
+              </div>
+              <p className="font-semibold text-dp-text-primary">{vi.aiChat.emptyTitle}</p>
+              <p className="text-sm text-dp-text-muted max-w-xs">
+                {vi.aiChat.emptyDesc}
+              </p>
             </div>
-            <p className="font-semibold text-gray-700 dark:text-gray-200">Xin chào! Mình có thể giúp gì cho bạn?</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
-              Hỏi bất kỳ câu hỏi nào về lập trình, lộ trình học, hoặc bài tập nhé.
-            </p>
-          </div>
-        )}
+          )}
 
-        {/* Danh sách tin nhắn */}
-        {messages.map((msg) =>
-          msg.role === 'user' ? (
-            // ── User bubble (phải) ──
-            <div key={msg.id} className="flex justify-end">
-              <div className="max-w-[80%]">
-                <div className="bg-blue-600 text-white rounded-2xl rounded-br-none px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
-                  {msg.content}
+          {/* Danh sách tin nhắn */}
+          {messages.map((msg) =>
+            msg.role === 'user' ? (
+              // ── User bubble (phải) ──
+              <div key={msg.id} className="flex justify-end">
+                <div className="max-w-[80%]">
+                  <div className="bg-gradient-to-r from-dp-primary to-dp-secondary text-white rounded-2xl rounded-br-none px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </div>
+                  {msg.createdAt && (
+                    <p className="text-xs text-dp-text-ghost mt-1 text-right">{formatTime(msg.createdAt)}</p>
+                  )}
                 </div>
-                {msg.createdAt && (
-                  <p className="text-xs text-gray-400 mt-1 text-right">{formatTime(msg.createdAt)}</p>
-                )}
+              </div>
+            ) : (
+              // ── AI bubble (trái) ──
+              <div key={msg.id} className="flex justify-start">
+                <div className="max-w-[80%]">
+                  <div className="glass rounded-2xl rounded-bl-none px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap text-dp-text-primary">
+                    {msg.content}
+                  </div>
+                  {msg.createdAt && (
+                    <p className="text-xs text-dp-text-ghost mt-1">{formatTime(msg.createdAt)}</p>
+                  )}
+                </div>
+              </div>
+            )
+          )}
+
+          {/* Typing indicator — AI đang trả lời */}
+          {sending && (
+            <div className="flex justify-start">
+              <div className="glass rounded-2xl rounded-bl-none px-4 py-3 flex items-center gap-2">
+                <span className="text-dp-text-secondary text-sm">{vi.aiChat.thinking}</span>
+                <span className="inline-flex gap-1">
+                  <span className="w-1.5 h-1.5 bg-dp-text-muted rounded-full animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 bg-dp-text-muted rounded-full animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 bg-dp-text-muted rounded-full animate-bounce [animation-delay:300ms]" />
+                </span>
               </div>
             </div>
-          ) : (
-            // ── AI bubble (trái) ──
-            <div key={msg.id} className="flex justify-start">
-              <div className="max-w-[80%]">
-                <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-bl-none px-4 py-2.5 text-sm leading-relaxed shadow-sm dark:shadow-gray-900/20 whitespace-pre-wrap text-gray-800 dark:text-gray-100">
-                  {msg.content}
-                </div>
-                {msg.createdAt && (
-                  <p className="text-xs text-gray-400 mt-1">{formatTime(msg.createdAt)}</p>
-                )}
-              </div>
-            </div>
-          )
-        )}
+          )}
 
-        {/* Typing indicator — AI đang trả lời */}
-        {sending && (
-          <div className="flex justify-start">
-            <div className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm flex items-center gap-2">
-              <span className="text-gray-500 dark:text-gray-400 text-sm">AI đang suy nghĩ</span>
-              <span className="inline-flex gap-1">
-                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce [animation-delay:300ms]" />
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Anchor để auto-scroll tới đây */}
-        <div ref={messagesEndRef} />
+          {/* Anchor để auto-scroll tới đây */}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* ── Input area (cố định dưới) ────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 px-4 py-3 shrink-0">
-        <div className="flex gap-2 max-w-xl mx-auto">
+      <div className="glass border-t border-dp-border px-4 py-3 shrink-0">
+        <div className="flex gap-2 max-w-3xl mx-auto">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -242,31 +235,27 @@ export default function AiChat() {
             onKeyDown={handleKeyDown}
             placeholder={
               quota?.remaining === 0
-                ? 'Đã hết quota hôm nay...'
-                : 'Nhập câu hỏi... (Enter để gửi, Shift+Enter xuống dòng)'
+                ? vi.aiChat.noQuotaPlaceholder
+                : vi.aiChat.inputPlaceholder
             }
             disabled={quota?.remaining === 0 || sending}
-            className="flex-1 resize-none rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3.5 py-2.5 text-sm
-              focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent
-              disabled:bg-gray-50 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-500 disabled:cursor-not-allowed
-              placeholder:text-gray-400 dark:placeholder:text-gray-500"
+            className="flex-1 resize-none glass-input text-dp-text-primary placeholder:text-dp-text-ghost rounded-xl px-3.5 py-2.5 text-sm
+              disabled:opacity-50 disabled:cursor-not-allowed"
           />
 
           <button
             onClick={handleSend}
             disabled={!input.trim() || sending || quota?.remaining === 0}
-            className="flex items-center justify-center w-10 h-10 mt-0.5 bg-purple-600 hover:bg-purple-700
-              text-white rounded-xl transition-colors shrink-0
-              disabled:opacity-40 disabled:cursor-not-allowed"
-            aria-label="Gửi"
+            className="btn-primary w-10 h-10 !px-0 shrink-0"
+            aria-label={vi.aiChat.sendButton}
           >
             <Send size={16} />
           </button>
         </div>
 
         {/* Hint text */}
-        <p className="text-center text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-          AI có thể mắc lỗi. Hãy kiểm tra lại thông tin quan trọng.
+        <p className="text-center text-xs text-dp-text-ghost mt-1.5 max-w-3xl mx-auto">
+          {vi.aiChat.disclaimer}
         </p>
       </div>
 
