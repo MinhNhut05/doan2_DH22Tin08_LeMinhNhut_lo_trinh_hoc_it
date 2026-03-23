@@ -2,16 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
-status: planning
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-23T02:57:11.213Z"
-last_activity: 2026-03-23 - Created roadmap for milestone v1.1 and mapped all 30 requirements to Phases 3-9
+status: unknown
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-03-23T10:50:51.451Z"
 progress:
   total_phases: 7
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 22
+  total_plans: 4
+  completed_plans: 1
 ---
 
 # Project State
@@ -21,16 +19,12 @@ progress:
 See: `/home/minhnhut_dev/projects/path-learn/.planning/PROJECT.md` (updated 2026-03-22)
 
 **Core value:** Guide each learner to the right next step with a stable, personalized learning experience that matches their goals, current level, and progress.
-**Current focus:** Phase 3 - Session Reliability and Vietnamese UX Baseline
+**Current focus:** Phase 03 — session-reliability-and-vietnamese-ux-baseline
 
 ## Current Position
 
-Phase: 3 of 9 (Session Reliability and Vietnamese UX Baseline)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-03-23 - Created roadmap for milestone v1.1 and mapped all 30 requirements to Phases 3-9
-
-Progress: [██░░░░░░░░] 22%
+Phase: 03 (session-reliability-and-vietnamese-ux-baseline) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -46,10 +40,7 @@ Progress: [██░░░░░░░░] 22%
 |-------|-------|-------|----------|
 | - | - | - | - |
 
-**Recent Trend:**
-
-- Last 5 plans: None yet
-- Trend: Baseline not established
+| Phase 03 P02 | 19m | 6 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -62,6 +53,9 @@ Recent decisions affecting current work:
 - [Phase 3]: Stability and Vietnamese UX cleanup stay ahead of personalization work.
 - [Phase 6]: Main-path guidance stays soft; secondary learning remains available.
 - [Phase 9]: Payment activation remains backend-authoritative and idempotent.
+- [Phase 03]: Keep auth bootstrap state in Zustand so route guards and root routes share one loading contract.
+- [Phase 03]: Use per-tab single-flight refresh dedupe without cross-tab coordination for session restore.
+- [Phase 03]: Show one Vietnamese expired-session toast then redirect after a short delay instead of immediate navigation.
 
 ### Pending Todos
 
@@ -75,6 +69,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-23T02:57:11.211Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-session-reliability-and-vietnamese-ux-baseline/03-CONTEXT.md
+Last session: 2026-03-23T10:50:51.448Z
+Stopped at: Completed 03-02-PLAN.md
+Resume file: None

@@ -9,8 +9,8 @@ Requirements for milestone v1.1 — Post-MVP Stabilization & Personalization.
 
 ### Stability
 
-- [ ] **STAB-01**: User can refresh any protected page with a valid session and stay signed in
-- [ ] **STAB-02**: User can open the app or return to a protected route without false login redirects while auth state is loading
+- [x] **STAB-01**: User can refresh any protected page with a valid session and stay signed in
+- [x] **STAB-02**: User can open the app or return to a protected route without false login redirects while auth state is loading
 - [ ] **STAB-03**: User sees correct Vietnamese text with proper diacritics and natural wording across all user-facing screens
 - [ ] **STAB-04**: Existing progress, enrollment, and continue-learning data is consistent and free of stale/contradictory state across dashboard, explore, lesson, and quiz flows (data correctness bugs only — new main-path prioritization behavior is covered by LP-10)
 
@@ -111,8 +111,8 @@ Which phases cover which requirements.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| STAB-01 | Phase 3 | Pending |
-| STAB-02 | Phase 3 | Pending |
+| STAB-01 | Phase 3 | Complete |
+| STAB-02 | Phase 3 | Complete |
 | STAB-03 | Phase 3 | Pending |
 | STAB-04 | Phase 3 | Pending |
 | PROF-01 | Phase 4 | Pending |
