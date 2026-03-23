@@ -8,6 +8,7 @@ import { AuthBootstrap } from './components/auth/AuthBootstrap';
 import './index.css';
 import { queryClient } from './lib/query/queryClient';
 import 'highlight.js/styles/github.css';
+import { initOfflineDetector } from './lib/offlineDetector';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,3 +22,5 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 );
+
+initOfflineDetector();
