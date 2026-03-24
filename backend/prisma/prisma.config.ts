@@ -6,19 +6,14 @@ import path from 'node:path';
 import { defineConfig } from 'prisma/config';
 import * as dotenv from 'dotenv';
 
-// ESM không có __dirname → dùng import.meta.dirname (Node 21.2+)
-// Hoặc fallback về process.cwd() (thư mục backend/ khi chạy pnpm prisma)
-const envPath = path.resolve(
-  (import.meta.dirname ?? process.cwd()),
-  '../.env',
-);
+// File này đang được TypeScript check theo CommonJS semantics trong repo hiện tại,
+// nên dùng __dirname thay vì import.meta.dirname để tránh TS1470.
+const configDir = typeof __dirname === 'string' ? __dirname : process.cwd();
+const envPath = path.resolve(configDir, '../.env');
 dotenv.config({ path: envPath });
 
 export default defineConfig({
-  schema: path.resolve(
-    (import.meta.dirname ?? process.cwd()),
-    'schema.prisma',
-  ),
+  schema: path.resolve(configDir, 'schema.prisma'),
 
   datasource: {
     url: process.env.DATABASE_URL!,

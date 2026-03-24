@@ -129,6 +129,8 @@ export class LearningPathsService {
                 slug: true,
                 summary: true,
                 estimatedMins: true,
+                // Quiz existence — sidebar hiển thị icon nếu lesson có quiz
+                quiz: { select: { id: true } },
               },
             },
           },
@@ -241,5 +243,28 @@ export class LearningPathsService {
       }
       throw error;
     }
+  }
+
+  // ── GET /learning-paths/my-enrollments ──────────────────────────────────
+
+  /**
+   * Trả về danh sách slug của các learning paths mà user đã enroll.
+   * Dùng cho Explore page để render enrollment state từ server data.
+   *
+   * Tại sao trả slug thay vì id?
+   * → Frontend Explore dùng slug làm key (enroll by slug, card key by slug)
+   * → Trả slug giảm mapping logic phía frontend
+   */
+  async getMyEnrollments(userId: string): Promise<string[]> {
+    const enrollments = await this.prisma.userLearningPath.findMany({
+      where: { userId },
+      select: {
+        learningPath: {
+          select: { slug: true },
+        },
+      },
+    });
+
+    return enrollments.map((e) => e.learningPath.slug);
   }
 }
