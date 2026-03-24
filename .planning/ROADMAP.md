@@ -123,7 +123,7 @@ Legacy phases 1-2 shipped in v1.0 and remain tracked in `/home/minhnhut_dev/proj
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 3. Session Reliability and Vietnamese UX Baseline | 5/6 | In Progress | 2026-03-24 |
+| 3. Session Reliability and Vietnamese UX Baseline | 6/6 | Complete | 2026-03-24 |
 | 4. Canonical Learner Profile Foundation | 0/TBD | Not started | - |
 | 5. Adaptive Onboarding Baseline and Resume Flow | 0/TBD | Not started | - |
 | 6. Main Path Personalization and Content Credibility | 0/TBD | Not started | - |

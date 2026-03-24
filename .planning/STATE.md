@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-06-PLAN.md
-last_updated: "2026-03-24T01:37:14.029Z"
+stopped_at: Completed 03-05-PLAN.md
+last_updated: "2026-03-24T02:04:34.326Z"
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -23,8 +23,8 @@ See: `/home/minhnhut_dev/projects/path-learn/.planning/PROJECT.md` (updated 2026
 
 ## Current Position
 
-Phase: 03 (session-reliability-and-vietnamese-ux-baseline) — EXECUTING
-Plan: 2 of 6
+Phase: 03 (session-reliability-and-vietnamese-ux-baseline) — COMPLETE
+Plan: 6 of 6
 
 ## Performance Metrics
 
@@ -44,6 +44,7 @@ Plan: 2 of 6
 | Phase 03 P03 | 15m | 7 tasks | 14 files |
 | Phase 03 P04 | 18m | 8 tasks | 9 files |
 | Phase 03 P06 | 6 min | 3 tasks | 3 files |
+| Phase 03 P05 | 10 min | 5 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Recent decisions affecting current work:
 - [Phase 03]: Use frontend/src/strings/vi.ts as the single source of truth for the remaining learner-facing screens instead of leaving copy fragmented across pages.
 - [Phase 03]: Treat AppLayout.tsx as a verified layout shell with no user-facing copy and remove it from plan metadata instead of forcing a no-value localization change.
 - [Phase 03]: Extend frontend/src/strings/vi.ts first, then point Dashboard and Lesson to those keys instead of keeping page-local literals.
+- [Phase 03]: Return enrolled learning path slugs instead of ids so Explore can use its existing slug-based card keys without extra mapping.
+- [Phase 03]: Derive Explore enrollment state from a React Query-backed Set and keep it fresh through the existing ['learning-paths'] prefix invalidation path.
 
 ### Pending Todos
 
@@ -78,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T01:37:14.026Z
-Stopped at: Completed 03-06-PLAN.md
+Last session: 2026-03-24T02:04:34.323Z
+Stopped at: Completed 03-05-PLAN.md
 Resume file: None
