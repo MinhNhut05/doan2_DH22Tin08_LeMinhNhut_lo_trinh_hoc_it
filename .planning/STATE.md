@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 Plan 1 complete
-last_updated: "2026-03-24T07:42:00.000Z"
+stopped_at: Phase 4 Plan 2 complete
+last_updated: "2026-03-24T14:35:00.000Z"
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 9
-  completed_plans: 7
+  completed_plans: 8
 ---
 
 # Project State
@@ -24,21 +24,22 @@ See: `/home/minhnhut_dev/projects/path-learn/.planning/PROJECT.md` (updated 2026
 ## Current Position
 
 Phase: 04 (canonical-learner-profile-foundation) — EXECUTING
-Plan: 1 of 3 — COMPLETE
+Plan: 2 of 3 — COMPLETE
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1
-- Average duration: 12 min
-- Total execution time: 0.2 hours
+- Total plans completed: 2
+- Average duration: 8.5 min
+- Total execution time: 0.28 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | Phase 04 P01 | 12m | 3 tasks | 6 files |
+| Phase 04 P02 | 5m | 2 tasks | 7 files |
 
 | Phase 03 P02 | 19m | 6 tasks | 12 files |
 | Phase 03 P03 | 15m | 7 tasks | 14 files |
@@ -72,6 +73,10 @@ Recent decisions affecting current work:
 - [Phase 04 P01]: Derive initial LearnerProfile skill_level and learning_pace from deterministic CASE expressions in migration SQL.
 - [Phase 04 P01]: Auth isNewUser detection now uses onboardingRounds with completed round 1 filter instead of removed OnboardingData.
 
+- [Phase 04 P02]: Return roundsCompleted as array of round numbers with non-null completedAt from OnboardingRound.
+- [Phase 04 P02]: Throw NotFoundException for uninitialized profiles instead of fabricating default data.
+- [Phase 04 P02]: createFromRoundOne exists as placeholder per D-04; Phase 5 implements.
+
 ### Pending Todos
 
 None yet.
@@ -84,6 +89,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-24T07:42:00.000Z
-Stopped at: Phase 4 Plan 1 complete
-Resume file: .planning/phases/04-canonical-learner-profile-foundation/04-01-SUMMARY.md
+Last session: 2026-03-24T14:35:00.000Z
+Stopped at: Phase 4 Plan 2 complete
+Resume file: .planning/phases/04-canonical-learner-profile-foundation/04-02-SUMMARY.md
