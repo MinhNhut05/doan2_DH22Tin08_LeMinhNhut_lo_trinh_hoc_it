@@ -1,73 +1,77 @@
-# SOHA Program Summarizer
+# DevPath Learning
 
 ## What This Is
 
-A web app for SOHA TRAVEL team to automatically convert detailed tour/event programs (PDF/DOCX) into beautiful, condensed Canva designs. Users upload a program file, choose a template, and get a Canva edit link with a summarized version — ready for sharing with clients and partners.
+DevPath is an AI-assisted personalized learning platform for Vietnamese IT learners. It helps users discover a main learning path, study through lessons, quizzes, and AI chat, then progressively adapt the experience based on their profile and behavior. The current milestone focuses on stabilizing the post-MVP product and laying the foundation for stronger personalization.
 
 ## Core Value
 
-Turn a 4-page detailed program into a polished 1-2 page Canva design in seconds, with correct formatting rules applied automatically.
+Guide each learner to the right next step with a stable, personalized learning experience that matches their goals, current level, and progress.
+
+## Current Milestone: v1.1 Post-MVP Stabilization & Personalization
+
+**Goal:** Make the MVP feel stable in daily use, then add adaptive onboarding and path personalization that guide each learner without locking them into a rigid journey.
+
+**Target features:**
+- Fix auth/session refresh issues, Vietnamese text issues, and high-friction product bugs
+- Add adaptive multi-round onboarding that uses previous answers and in-app behavior
+- Introduce AI-suggested main learning path behavior with secondary learning kept separate from the main journey
+- Personalize learning path recommendations and begin using profile context in AI chat
+- Add real backend support for leaderboard, notifications, and secure real payment upgrade flow
+- Fill critical course content gaps needed for the primary learning flows
 
 ## Requirements
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Auth/session refresh issues fixed, enrollment state consistency resolved, Vietnamese UI text across critical screens — Validated in Phase 03
+- ✓ Email OTP + OAuth login, JWT session flow, and onboarding redirect are implemented — v1.0
+- ✓ Learning path, track, lesson, quiz, and progress foundations are implemented — v1.0
+- ✓ AI chat, payment tiers, MoMo/VNPay integration, and subscription basics are implemented — v1.0
+- ✓ Admin CRUD foundation and frontend learning/payment/admin surfaces are implemented — v1.0
 
 ### Active
-
-- [ ] Upload PDF/DOCX files and extract program content
-- [ ] AI + rule-based engine to summarize/condense programs
-- [ ] Company formatting rules applied automatically (audience type, day/session layout, school names)
-- [ ] Multiple fixed Canva templates (1-day tour, 2-day tour, school event, corporate event)
-- [ ] Create Canva designs via Canva Connect API from templates
-- [ ] Return editable Canva link to user
-- [ ] Admin panel to manage summarization rules
-- [ ] Admin panel to manage Canva templates
-- [ ] User authentication with account provisioning
-- [ ] History of generated designs per user
+- [ ] Add hybrid multi-round onboarding that starts with basic profile and adapts using prior answers and app behavior
+- [ ] Let AI suggest a main learning path while keeping off-path learning available as secondary activity
+- [ ] Personalize learning path recommendations from onboarding profile and start using that profile in AI chat
+- [ ] Add backend-minimum leaderboard (points + rank) and event-driven notifications
+- [ ] Support real account-upgrade payment flow with secure backend config and auto-activation on confirmation
+- [ ] Fill critical learning content gaps needed for the main path experience
 
 ### Out of Scope
 
-- Mobile app — web-first, responsive enough for desktop use
-- Direct PDF/image export from web app — users edit and export from Canva
-- Real-time collaboration — each user generates independently
-- Public registration — accounts are provisioned by admin only
+- Hard-locking learners so they cannot access content outside their main path — guidance should stay soft
+- Full friends/team leaderboard — milestone scope is platform-wide points + rank only
+- Fully autonomous AI orchestration for every onboarding round — use bounded adaptive logic first
+- Large-scale content expansion beyond the critical gaps needed for the primary path flows
+- Mobile app — keep focus on web product stability and personalization
 
 ## Context
 
-**Company:** SOHA TRAVEL — tour/event organizer in Vietnam
-**Problem:** Team manually creates condensed program summaries in Canva for every tour/event. This is repetitive and time-consuming.
-**Users:** Internal team members (operations, sales, coordinators) — ~5-20 people
-**Source files:** Detailed tour programs in PDF or DOCX format (typically 2-6 pages)
-**Output:** Canva designs following fixed templates with auto-applied rules
+DevPath already has an MVP across backend and frontend: authentication, onboarding, learning paths, lessons, quizzes, progress tracking, AI chat, payments, and admin pages. Based on the existing roadmap, backend foundation and frontend MVP work are complete, while polish/deploy work and several production-quality issues remain unfinished.
 
-**Key formatting rules (examples):**
-- School events (tieu hoc, THCS, THPT): greeting = "Quy thay co va cac ban hoc sinh" + include school name
-- Corporate/group events: greeting = "Quy khach" or "Quy doan"
-- 1-day programs: columns = "Buoi sang" / "Buoi chieu"
-- 2-day programs: columns = "Ngay 1" / "Ngay 2"
-- Menu section included in output design
+The current product pain points are concentrated in post-MVP behavior: auth refresh/redirect issues, incorrect Vietnamese text, learning-path state that does not reflect a clear main journey, incomplete backend support for leaderboard and notifications, sparse course content in key areas, and a payment upgrade flow that now needs secure real-world configuration.
 
-**Canva integration:** Uses Canva Connect API to duplicate templates and fill in content. Users get a direct edit link to customize further if needed.
+Primary users remain Vietnamese IT learners who need a guided path into Frontend, Backend, or Fullstack learning. The product direction now shifts from “MVP breadth” to “stable personalized experience.”
 
 ## Constraints
 
-- **Tech stack**: Next.js full-stack (API Routes + React frontend) — simple deployment, user already knows React
-- **Canva API**: Must use Canva Connect API — requires Canva developer account and app approval
-- **AI provider**: LLM for content summarization (Claude or GPT API) — combined with rule-based logic
-- **File parsing**: Must handle both PDF and DOCX extraction accurately (Vietnamese text)
-- **Authentication**: Simple account system (admin provisions accounts, no public signup)
-- **Deployment**: VPS or Vercel — team internal tool, no heavy traffic expected
+- **Tech stack**: Keep the existing monorepo architecture (React/Vite frontend + NestJS backend + Prisma/PostgreSQL) — do not rewrite the platform
+- **Auth**: Existing JWT + refresh-cookie flow must be stabilized, not replaced wholesale
+- **Payments**: Real payment recipient details must be handled securely in backend configuration and controlled display surfaces, never hardcoded into the client
+- **UX language**: Vietnamese-first experience remains the priority; wording quality matters to perceived product quality
+- **Milestone strategy**: Stability-first — bug and UX friction reduction come before deeper personalization work
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Next.js full-stack over NestJS + React | Simpler architecture for internal tool, 1 app to deploy, API Routes sufficient | -- Pending |
-| Canva Connect API over image generation | User wants editable Canva links, not static images | -- Pending |
-| AI + rules hybrid over pure AI | Rules ensure consistency (greeting format, layout), AI handles summarization | -- Pending |
-| Admin-provisioned accounts over public signup | Internal company tool, controlled access | -- Pending |
+| Treat v1.1 as a stability-first milestone | Existing MVP breadth is already large; user trust now depends on fixing broken or confusing flows | -- Pending |
+| Use hybrid multi-round onboarding | Reduce first-session friction while collecting richer learner profile over time | -- Pending |
+| Use a soft main-path model | Keep the user guided by one main journey while still allowing optional exploration | -- Pending |
+| Let AI suggest the initial main path | Personalization should feel tailored without forcing a hidden auto-assignment | -- Pending |
+| Scope leaderboard to points + rank first | Backend completion is needed, but narrow scope keeps the feature shippable | -- Pending |
+| Use secure backend-configured real payment setup with auto-activation on confirmation | Support real upgrades without exposing sensitive information or requiring manual activation every time | -- Pending |
 
 ## Evolution
 
@@ -87,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-22 after initialization*
+*Last updated: 2026-03-24 after Phase 03 completion*
