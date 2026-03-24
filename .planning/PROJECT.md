@@ -91,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-24 after Phase 03 completion*
+*Last updated: 2026-03-24 after Phase 04 completion — canonical learner profile foundation (round-based onboarding, profile module, recalculation hooks)*
