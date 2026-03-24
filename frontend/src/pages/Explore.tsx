@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLearningPaths } from '../hooks/useLearningPaths';
 import { useEnroll } from '../hooks/useEnroll';
+import { useMyEnrollments } from '../hooks/useMyEnrollments';
 import { vi } from '../strings/vi';
 import { Skeleton } from '../components/feedback/Skeleton';
 import { PageError } from '../components/feedback/PageError';
@@ -77,19 +78,12 @@ export default function Explore() {
   const navigate = useNavigate();
   const { data: paths = [], isLoading, error, refetch } = useLearningPaths();
   const enrollMutation = useEnroll();
-  const [enrolled, setEnrolled] = useState<Record<string, boolean>>({});
+  const { enrolledSlugs } = useMyEnrollments();
 
   function handleEnroll(slug: string) {
     enrollMutation.mutate(slug, {
       onSuccess: () => {
-        setEnrolled((prev) => ({ ...prev, [slug]: true }));
         navigate('/dashboard');
-      },
-      onError: (err) => {
-        const status = (err as { response?: { status?: number } })?.response?.status;
-        if (status === 409) {
-          setEnrolled((prev) => ({ ...prev, [slug]: true }));
-        }
       },
     });
   }
@@ -145,7 +139,7 @@ export default function Explore() {
               const diff = difficultyConfig[path.difficulty];
               const isEnrolling =
                 enrollMutation.isPending && enrollMutation.variables === path.slug;
-              const isEnrolled = enrolled[path.slug] ?? false;
+              const isEnrolled = enrolledSlugs.has(path.slug);
 
               return (
                 <div key={path.id} className="glass rounded-2xl p-5 flex flex-col gap-3 glass-hover">
