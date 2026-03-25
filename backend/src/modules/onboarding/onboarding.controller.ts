@@ -21,12 +21,19 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
 import { JwtAuthGuard } from '../auth/index.js';
 import { OnboardingService } from './onboarding.service.js';
-import { SubmitOnboardingDto, ConfirmPathDto } from './dto/index.js';
+import {
+  SubmitOnboardingDto,
+  ConfirmPathDto,
+  SubmitRoundTwoDto,
+  SubmitRoundThreeDto,
+} from './dto/index.js';
 
 // req.user được gắn bởi JwtStrategy.validate()
 // Shape: { id: string, email: string, role: string }
@@ -72,6 +79,39 @@ export class OnboardingController {
   async submitAnswers(@Req() req: Request, @Body() dto: SubmitOnboardingDto) {
     const user = req.user as JwtUser;
     return this.onboardingService.submitAnswers(user.id, dto);
+  }
+
+  @Get('status')
+  @UseGuards(JwtAuthGuard)
+  async getStatus(@Req() req: Request) {
+    const user = req.user as JwtUser;
+    return this.onboardingService.getStatus(user.id);
+  }
+
+  @Get('questions/:round')
+  @UseGuards(JwtAuthGuard)
+  async getQuestionsForRound(
+    @Req() req: Request,
+    @Param('round', ParseIntPipe) round: number,
+  ) {
+    const user = req.user as JwtUser;
+    return this.onboardingService.getQuestionsForRound(user.id, round);
+  }
+
+  @Post('submit/round-two')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  async submitRoundTwo(@Req() req: Request, @Body() dto: SubmitRoundTwoDto) {
+    const user = req.user as JwtUser;
+    return this.onboardingService.submitRoundTwo(user.id, dto);
+  }
+
+  @Post('submit/round-three')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  async submitRoundThree(@Req() req: Request, @Body() dto: SubmitRoundThreeDto) {
+    const user = req.user as JwtUser;
+    return this.onboardingService.submitRoundThree(user.id, dto);
   }
 
   // ── GET /api/v1/onboarding/recommendation ────────────────────────────────
