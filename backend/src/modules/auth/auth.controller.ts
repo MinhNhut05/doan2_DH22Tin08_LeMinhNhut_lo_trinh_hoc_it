@@ -392,9 +392,17 @@ export class AuthController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getMe(@Req() req: Request) {
+  async getMe(@Req() req: Request) {
     // req.user được gắn bởi JwtStrategy.validate()
     // Shape: { id: string, email: string, role: string }
-    return req.user;
+    const user = req.user as { id: string; email: string; role: string };
+    const completedRoundCount = await this.authService.getOnboardingCompletedCount(
+      user.id,
+    );
+
+    return {
+      ...user,
+      onboardingCompleted: completedRoundCount >= 3,
+    };
   }
 }

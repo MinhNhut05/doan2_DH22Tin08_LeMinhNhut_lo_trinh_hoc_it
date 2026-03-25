@@ -26,6 +26,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/index.js';
 import { MailService } from '../mail/index.js';
 import { UserRole } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -66,6 +67,7 @@ export interface LoginResult {
     role: UserRole;
     displayName: string | null;
     isNewUser: boolean; // Frontend dùng để redirect tới onboarding
+    onboardingCompleted: boolean;
   };
 }
 
@@ -629,14 +631,23 @@ export class AuthService {
     email: string;
     password: string;
   }): Promise<LoginResult> {
-    // ── Tìm user + check onboardingRounds (để xác định isNewUser) ──
+    // ── Tìm user + check onboardingRounds (để xác định isNewUser / onboardingCompleted) ──
+    const completedOnboardingRoundsWhere: Prisma.OnboardingRoundWhereInput = {
+      completedAt: { not: null as never },
+    };
+
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        displayName: true,
+        emailVerified: true,
+        passwordHash: true,
         onboardingRounds: {
-          where: { roundNumber: 1 },
-          select: { id: true },
-          take: 1,
+          where: completedOnboardingRoundsWhere,
+          select: { roundNumber: true },
         },
       },
     });
@@ -712,8 +723,18 @@ export class AuthService {
         role: user.role,
         displayName: user.displayName,
         isNewUser: user.onboardingRounds.length === 0, // no completed round 1 = new user
+        onboardingCompleted: user.onboardingRounds.length >= 3,
       },
     };
+  }
+
+  async getOnboardingCompletedCount(userId: string): Promise<number> {
+    return this.prisma.onboardingRound.count({
+      where: {
+        userId,
+        completedAt: { not: null as never },
+      },
+    });
   }
 
   // ─── Forgot Password ──────────────────────────────────────────────────
@@ -809,7 +830,7 @@ export class AuthService {
    */
   async findOrCreateOAuthUser(
     profile: OAuthProfile,
-  ): Promise<TokenUser & { isNewUser: boolean }> {
+  ): Promise<TokenUser & { isNewUser: boolean; onboardingCompleted: boolean }> {
     // ── Bước 1: Tìm theo OAuth provider ID (ngoài transaction — fast path) ──
     // Đây là case phổ biến nhất (user đã login trước đó) → check trước khi vào transaction
     // Dùng conditional thay vì computed key [providerField]
@@ -825,11 +846,16 @@ export class AuthService {
     const existingByProvider = await this.prisma.user.findUnique({ where });
 
     if (existingByProvider) {
+      const completedRoundCount = await this.getOnboardingCompletedCount(
+        existingByProvider.id,
+      );
+
       return {
         id: existingByProvider.id,
         email: existingByProvider.email,
         role: existingByProvider.role,
         isNewUser: false,
+        onboardingCompleted: completedRoundCount >= 3,
       };
     }
 
@@ -864,11 +890,19 @@ export class AuthService {
           `OAuth ${profile.provider} merged into existing account: ${profile.email}`,
         );
 
+        const completedRoundCount = await tx.onboardingRound.count({
+          where: {
+            userId: user.id,
+            completedAt: { not: null as never },
+          },
+        });
+
         return {
           id: user.id,
           email: user.email,
           role: user.role,
           isNewUser: false,
+          onboardingCompleted: completedRoundCount >= 3,
         };
       }
 
@@ -893,6 +927,7 @@ export class AuthService {
         email: user.email,
         role: user.role,
         isNewUser: true,
+        onboardingCompleted: false,
       };
     });
   }
