@@ -14,11 +14,14 @@ function createTestQueryClient() {
 
 interface ProvidersProps {
   children: ReactNode;
+  queryClient: QueryClient;
 }
 
-function AllProviders({ children }: ProvidersProps) {
-  const queryClient = createTestQueryClient();
+interface RenderWithProvidersOptions extends Omit<RenderOptions, 'wrapper'> {
+  route?: string;
+}
 
+function AllProviders({ children, queryClient }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>{children}</BrowserRouter>
@@ -28,9 +31,15 @@ function AllProviders({ children }: ProvidersProps) {
 
 export function renderWithProviders(
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
+  { route = '/', ...options }: RenderWithProvidersOptions = {},
 ) {
-  return render(ui, { wrapper: AllProviders, ...options });
+  window.history.pushState({}, 'Test route', route);
+  const queryClient = createTestQueryClient();
+
+  return render(ui, {
+    wrapper: ({ children }) => <AllProviders queryClient={queryClient}>{children}</AllProviders>,
+    ...options,
+  });
 }
 
 export { createTestQueryClient };
