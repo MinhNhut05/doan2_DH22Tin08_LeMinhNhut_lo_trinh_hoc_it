@@ -118,9 +118,7 @@ export class OnboardingController {
 
   /**
    * Lấy gợi ý learning path từ AI.
-   * Cần có OnboardingData trước (phải submit trước).
-   *
-   * TODO: Chưa implement — trả về 501 tạm thời
+   * Chỉ khả dụng sau khi user hoàn thành đủ 3 round onboarding.
    */
   @Get('recommendation')
   async getRecommendation(@Req() req: Request) {
@@ -133,8 +131,6 @@ export class OnboardingController {
   /**
    * User confirm learning path đã chọn.
    * Tạo UserLearningPath record.
-   *
-   * TODO: Chưa implement — trả về 501 tạm thời
    */
   @Post('confirm')
   @HttpCode(HttpStatus.CREATED) // 201 vì tạo mới UserLearningPath record
