@@ -172,22 +172,40 @@ model OnboardingRound {
 // ============================================
 
 model LearnerProfile {
-  id               String              @id @default(uuid())
-  userId           String              @unique @map("user_id")
-  careerGoal       CareerGoal          @map("career_goal")
-  skillLevel       LearnerSkillLevel   @map("skill_level")
-  learningPace     LearnerLearningPace @map("learning_pace")
-  strengths        Json                @default("[]")
-  weaknesses       Json                @default("[]")
-  preferredTopics  Json                @default("[]") @map("preferred_topics")
-  lastRecalculatedAt DateTime          @map("last_recalculated_at")
-  createdAt        DateTime            @default(now()) @map("created_at")
-  updatedAt        DateTime            @updatedAt @map("updated_at")
+  id                 String              @id @default(uuid())
+  userId             String              @unique @map("user_id")
+  careerGoal         CareerGoal          @map("career_goal")
+  skillLevel         LearnerSkillLevel   @map("skill_level")
+  learningPace       LearnerLearningPace @map("learning_pace")
+  strengths          Json                @default("[]")
+  weaknesses         Json                @default("[]")
+  preferredTopics    Json                @default("[]") @map("preferred_topics")
+  mainLearningPathId String?             @map("main_learning_path_id")
+  lastRecalculatedAt DateTime            @map("last_recalculated_at")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mainLearningPath LearningPath? @relation(fields: [mainLearningPathId], references: [id])
 
   @@index([skillLevel])
   @@map("learner_profiles")
+}
+
+// ============================================
+// PENDING ONBOARDING ROUND (Milestone-triggered)
+// ============================================
+
+model PendingOnboardingRound {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  roundNumber  Int      @map("round_number")
+  dismissCount Int      @default(0) @map("dismiss_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, roundNumber])
+  @@index([userId])
+  @@map("pending_onboarding_rounds")
 }
 
 // ============================================
@@ -211,6 +229,7 @@ model LearningPath {
   // Relations
   tracks            Track[]
   userLearningPaths UserLearningPath[]
+  mainPathProfiles  LearnerProfile[]
 
   @@map("learning_paths")
 }
