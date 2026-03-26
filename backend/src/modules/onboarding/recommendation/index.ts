@@ -12,7 +12,10 @@ export type { OnboardingDataInput, BuiltPrompt } from './onboarding-prompt.build
 
 // ── Parser ────────────────────────────────────────────────────────────────────
 export { parseRecommendation } from './onboarding-recommendation.parser.js';
-export type { RecommendationResult } from './onboarding-recommendation.parser.js';
+export type {
+  RankedRecommendation,
+  RecommendationResult,
+} from './onboarding-recommendation.parser.js';
 
 // ── Fallback ──────────────────────────────────────────────────────────────────
 export { getFallbackRecommendation } from './onboarding-recommendation.fallback.js';

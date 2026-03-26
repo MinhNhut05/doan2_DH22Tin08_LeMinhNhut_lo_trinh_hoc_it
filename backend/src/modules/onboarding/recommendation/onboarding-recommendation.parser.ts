@@ -15,21 +15,25 @@ import { VALID_PATH_SLUGS } from './onboarding-prompt.builder.js';
 // ── RecommendationResult (shared type) ───────────────────────────────────────
 
 /**
+ * Một recommendation item trong ranked result.
+ */
+export interface RankedRecommendation {
+  pathSlug: string;
+  matchScore: number;
+  explanation: string;
+  focusAreas: string[];
+}
+
+/**
  * Shape của recommendation result — contract giữa recommendation engine và service.
  *
  * source: 'ai' khi parse thành công, 'fallback' khi dùng rule-based fallback
- * primaryPath: slug của learning path được recommend chính
- * alternativePaths: các slug khác có thể phù hợp (có thể rỗng)
- * reason: lý do AI chọn path này (tiếng Việt)
- * focusAreas: các topic user nên tập trung (dựa trên prior knowledge gap)
+ * rankings: tối đa 3 learning paths được xếp hạng theo độ phù hợp
  * tips: lời khuyên học tập cá nhân hóa
  */
 export interface RecommendationResult {
   source: 'ai' | 'fallback';
-  primaryPath: string;
-  alternativePaths: string[];
-  reason: string;
-  focusAreas: string[];
+  rankings: RankedRecommendation[];
   tips: string[];
 }
 
