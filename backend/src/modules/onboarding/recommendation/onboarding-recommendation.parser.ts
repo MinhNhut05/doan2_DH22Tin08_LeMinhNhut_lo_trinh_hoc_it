@@ -37,92 +37,65 @@ export interface RecommendationResult {
   tips: string[];
 }
 
-// ── Internal type để validate AI JSON ────────────────────────────────────────
-
-/**
- * Shape mong đợi từ AI JSON response.
- * Dùng unknown để force explicit type checking trước khi dùng.
- */
-interface RawAiJson {
-  primaryPath: unknown;
-  alternativePaths: unknown;
-  reason: unknown;
-  focusAreas: unknown;
-  tips: unknown;
-}
-
 // ── Parser function ───────────────────────────────────────────────────────────
 
 /**
- * Parse raw AI response string thành RecommendationResult.
- *
- * Trả về null nếu:
- * - Không thể JSON.parse (AI trả về non-JSON)
- * - primaryPath không phải string hoặc không trong VALID_PATH_SLUGS
- * - reason không phải string
- *
- * Normalize (không trả null):
- * - alternativePaths: nếu không phải array → dùng []
- * - focusAreas: nếu không phải array string → dùng []
- * - tips: nếu không phải array string → dùng []
- *
- * @example
- * const result = parseRecommendation(rawText)
- * if (result === null) {
- *   // AI trả về format sai → dùng fallback
- * }
+ * Parse raw AI response string thành ranked RecommendationResult.
  */
 export function parseRecommendation(raw: string): RecommendationResult | null {
-  // ── Bước 1: Làm sạch raw string ───────────────────────────────────────────
-  // AI đôi khi thêm whitespace, newline đầu/cuối
-  // Nếu AI vẫn wrap trong ```json...``` dù đã dặn không → strip ra
   const cleaned = extractJsonString(raw.trim());
 
-  // ── Bước 2: JSON.parse ────────────────────────────────────────────────────
-  let parsed: RawAiJson;
+  let parsed: { rankings?: unknown; tips?: unknown };
   try {
-    parsed = JSON.parse(cleaned) as RawAiJson;
+    parsed = JSON.parse(cleaned) as { rankings?: unknown; tips?: unknown };
   } catch {
-    // AI không trả về valid JSON → null
     return null;
   }
 
-  // ── Bước 3: Validate primaryPath (critical field) ─────────────────────────
-  if (typeof parsed.primaryPath !== 'string') {
+  if (!Array.isArray(parsed.rankings) || parsed.rankings.length === 0) {
     return null;
   }
 
-  // primaryPath phải nằm trong danh sách slug hợp lệ
-  // Normalize: trim và lowercase để tránh lỗi do AI thêm khoảng trắng
-  const primaryPath = parsed.primaryPath.trim().toLowerCase();
-  if (!VALID_PATH_SLUGS.includes(primaryPath)) {
+  const validatedRankings: RankedRecommendation[] = [];
+  const usedSlugs = new Set<string>();
+
+  for (const item of parsed.rankings) {
+    if (typeof item !== 'object' || item === null) continue;
+
+    const rawItem = item as Record<string, unknown>;
+
+    if (typeof rawItem.pathSlug !== 'string') continue;
+    const pathSlug = rawItem.pathSlug.trim().toLowerCase();
+    if (!VALID_PATH_SLUGS.includes(pathSlug)) continue;
+    if (usedSlugs.has(pathSlug)) continue;
+
+    const matchScore = Number(rawItem.matchScore);
+    if (Number.isNaN(matchScore) || matchScore < 0 || matchScore > 100) continue;
+
+    if (typeof rawItem.explanation !== 'string' || rawItem.explanation.trim() === '') continue;
+
+    const focusAreas = normalizeStringArray(rawItem.focusAreas);
+
+    usedSlugs.add(pathSlug);
+    validatedRankings.push({
+      pathSlug,
+      matchScore: Math.round(matchScore),
+      explanation: rawItem.explanation.trim(),
+      focusAreas,
+    });
+  }
+
+  if (validatedRankings.length === 0) {
     return null;
   }
 
-  // ── Bước 4: Validate reason (critical field) ──────────────────────────────
-  if (typeof parsed.reason !== 'string' || parsed.reason.trim() === '') {
-    return null;
-  }
+  validatedRankings.sort((a, b) => b.matchScore - a.matchScore);
 
-  // ── Bước 5: Normalize optional array fields ───────────────────────────────
-  // Không return null nếu thiếu → dùng default rỗng
-
-  const alternativePaths = normalizeStringArray(parsed.alternativePaths)
-    // Filter chỉ giữ slugs hợp lệ, loại bỏ slug không tồn tại
-    .filter((slug) => VALID_PATH_SLUGS.includes(slug))
-    // Loại bỏ primaryPath nếu AI nhầm đưa vào alternativePaths
-    .filter((slug) => slug !== primaryPath);
-
-  const focusAreas = normalizeStringArray(parsed.focusAreas);
   const tips = normalizeStringArray(parsed.tips);
 
-  // ── Bước 6: Return validated result ──────────────────────────────────────
   return {
     source: 'ai',
-    primaryPath,
-    alternativePaths,
-    reason: parsed.reason.trim(),
-    focusAreas,
+    rankings: validatedRankings.slice(0, 3),
     tips,
   };
 }
