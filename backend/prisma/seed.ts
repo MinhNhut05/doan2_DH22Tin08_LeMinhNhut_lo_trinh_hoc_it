@@ -900,26 +900,36 @@ Deploy React application lên production.
       create: { trackId: 'track-web-fundamentals', lessonId: lessonMap['responsive-design'].id, order: 4 },
     }),
 
-    // JavaScript Core Track
+    // JavaScript Core Track (6 lessons)
     prisma.trackLesson.upsert({
       where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-basics'].id } },
-      update: {},
+      update: { order: 1 },
       create: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-basics'].id, order: 1 },
     }),
     prisma.trackLesson.upsert({
+      where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-scope-closures'].id } },
+      update: { order: 2 },
+      create: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-scope-closures'].id, order: 2 },
+    }),
+    prisma.trackLesson.upsert({
       where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['es6-features'].id } },
-      update: {},
-      create: { trackId: 'track-javascript-core', lessonId: lessonMap['es6-features'].id, order: 2 },
+      update: { order: 3 },
+      create: { trackId: 'track-javascript-core', lessonId: lessonMap['es6-features'].id, order: 3 },
+    }),
+    prisma.trackLesson.upsert({
+      where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-array-methods'].id } },
+      update: { order: 4 },
+      create: { trackId: 'track-javascript-core', lessonId: lessonMap['javascript-array-methods'].id, order: 4 },
     }),
     prisma.trackLesson.upsert({
       where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['dom-manipulation'].id } },
-      update: {},
-      create: { trackId: 'track-javascript-core', lessonId: lessonMap['dom-manipulation'].id, order: 3 },
+      update: { order: 5 },
+      create: { trackId: 'track-javascript-core', lessonId: lessonMap['dom-manipulation'].id, order: 5 },
     }),
     prisma.trackLesson.upsert({
       where: { trackId_lessonId: { trackId: 'track-javascript-core', lessonId: lessonMap['async-javascript'].id } },
-      update: {},
-      create: { trackId: 'track-javascript-core', lessonId: lessonMap['async-javascript'].id, order: 4 },
+      update: { order: 6 },
+      create: { trackId: 'track-javascript-core', lessonId: lessonMap['async-javascript'].id, order: 6 },
     }),
 
     // React Fundamentals Track
