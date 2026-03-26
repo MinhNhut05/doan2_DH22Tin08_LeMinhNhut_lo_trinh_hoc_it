@@ -12,6 +12,9 @@ require('dotenv').config({ path: path.resolve(__dirname, '.env') });
 
 module.exports = defineConfig({
   schema: path.resolve(__dirname, 'prisma/schema.prisma'),
+  migrations: {
+    seed: 'ts-node prisma/seed.ts',
+  },
   datasource: {
     url: process.env.DATABASE_URL,
   },
