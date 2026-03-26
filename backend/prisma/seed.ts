@@ -996,6 +996,16 @@ Deploy React application lên production.
   // ============================================
   console.log('Creating lesson prerequisites...');
 
+  // Clean up old JS Core prerequisites that are now replaced by new chain
+  await prisma.lessonPrerequisite.deleteMany({
+    where: {
+      OR: [
+        { lessonId: lessonMap['es6-features'].id, prerequisiteId: lessonMap['javascript-basics'].id },
+        { lessonId: lessonMap['dom-manipulation'].id, prerequisiteId: lessonMap['es6-features'].id },
+      ],
+    },
+  });
+
   await Promise.all([
     // CSS requires HTML
     prisma.lessonPrerequisite.upsert({
@@ -1015,17 +1025,29 @@ Deploy React application lên production.
       update: {},
       create: { lessonId: lessonMap['responsive-design'].id, prerequisiteId: lessonMap['css-flexbox-grid'].id },
     }),
-    // ES6 requires JS Basics
+    // Scope/Closures requires JS Basics
     prisma.lessonPrerequisite.upsert({
-      where: { lessonId_prerequisiteId: { lessonId: lessonMap['es6-features'].id, prerequisiteId: lessonMap['javascript-basics'].id } },
+      where: { lessonId_prerequisiteId: { lessonId: lessonMap['javascript-scope-closures'].id, prerequisiteId: lessonMap['javascript-basics'].id } },
       update: {},
-      create: { lessonId: lessonMap['es6-features'].id, prerequisiteId: lessonMap['javascript-basics'].id },
+      create: { lessonId: lessonMap['javascript-scope-closures'].id, prerequisiteId: lessonMap['javascript-basics'].id },
     }),
-    // DOM requires ES6
+    // ES6 requires Scope/Closures
     prisma.lessonPrerequisite.upsert({
-      where: { lessonId_prerequisiteId: { lessonId: lessonMap['dom-manipulation'].id, prerequisiteId: lessonMap['es6-features'].id } },
+      where: { lessonId_prerequisiteId: { lessonId: lessonMap['es6-features'].id, prerequisiteId: lessonMap['javascript-scope-closures'].id } },
       update: {},
-      create: { lessonId: lessonMap['dom-manipulation'].id, prerequisiteId: lessonMap['es6-features'].id },
+      create: { lessonId: lessonMap['es6-features'].id, prerequisiteId: lessonMap['javascript-scope-closures'].id },
+    }),
+    // Array Methods requires ES6
+    prisma.lessonPrerequisite.upsert({
+      where: { lessonId_prerequisiteId: { lessonId: lessonMap['javascript-array-methods'].id, prerequisiteId: lessonMap['es6-features'].id } },
+      update: {},
+      create: { lessonId: lessonMap['javascript-array-methods'].id, prerequisiteId: lessonMap['es6-features'].id },
+    }),
+    // DOM requires Array Methods
+    prisma.lessonPrerequisite.upsert({
+      where: { lessonId_prerequisiteId: { lessonId: lessonMap['dom-manipulation'].id, prerequisiteId: lessonMap['javascript-array-methods'].id } },
+      update: {},
+      create: { lessonId: lessonMap['dom-manipulation'].id, prerequisiteId: lessonMap['javascript-array-methods'].id },
     }),
     // Async requires DOM
     prisma.lessonPrerequisite.upsert({
