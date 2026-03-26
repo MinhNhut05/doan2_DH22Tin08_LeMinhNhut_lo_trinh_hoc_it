@@ -38,10 +38,20 @@ import {
   parseRecommendation,
   getFallbackRecommendation,
 } from './recommendation/index.js';
-import type { RecommendationResult, OnboardingDataInput } from './recommendation/index.js';
+import type {
+  RecommendationResult,
+  RankedRecommendation,
+  OnboardingDataInput,
+} from './recommendation/index.js';
 
-export interface OnboardingRecommendationResponse extends RecommendationResult {
+export interface RankedRecommendationWithId extends RankedRecommendation {
   learningPathId: string;
+}
+
+export interface OnboardingRecommendationResponse {
+  source: 'ai' | 'fallback';
+  rankings: RankedRecommendationWithId[];
+  tips: string[];
 }
 
 const VALID_ROUNDS = [1, 2, 3] as const;
@@ -311,14 +321,20 @@ export class OnboardingService {
       recommendation = getFallbackRecommendation(input);
     }
 
+    const primaryRecommendation = recommendation.rankings[0];
+
+    if (!primaryRecommendation) {
+      throw new NotFoundException('No recommendation rankings available');
+    }
+
     const learningPath = await this.prisma.learningPath.findUnique({
-      where: { slug: recommendation.primaryPath },
+      where: { slug: primaryRecommendation.pathSlug },
       select: { id: true },
     });
 
     if (!learningPath) {
       throw new NotFoundException(
-        `Learning path not found for slug ${recommendation.primaryPath}`,
+        `Learning path not found for slug ${primaryRecommendation.pathSlug}`,
       );
     }
 
@@ -396,6 +412,11 @@ export class OnboardingService {
           currentLessonId: firstTrackLesson.lessonId,
         },
       });
+    });
+
+    await this.prisma.learnerProfile.updateMany({
+      where: { userId, mainLearningPathId: null },
+      data: { mainLearningPathId: dto.learningPathId },
     });
 
     return userLearningPath;

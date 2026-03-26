@@ -279,10 +279,14 @@ describe('OnboardingService', () => {
       prisma.learningPath.findUnique.mockResolvedValue({ id: mockLearningPathId });
       aiService.chat.mockResolvedValue(
         JSON.stringify({
-          primaryPath: 'frontend-developer',
-          alternativePaths: [],
-          reason: 'Based on your Frontend goal.',
-          focusAreas: ['HTML & CSS fundamentals', 'JavaScript ES6+'],
+          rankings: [
+            {
+              pathSlug: 'frontend-developer',
+              matchScore: 95,
+              explanation: 'Based on your Frontend goal.',
+              focusAreas: ['HTML & CSS fundamentals', 'JavaScript ES6+'],
+            },
+          ],
           tips: ['Study consistently every day.'],
         }),
       );
@@ -291,7 +295,7 @@ describe('OnboardingService', () => {
 
       expect(aiService.chat).toHaveBeenCalledTimes(1);
       expect(result.source).toBe('ai');
-      expect(result.primaryPath).toBe('frontend-developer');
+      expect(result.rankings[0]?.pathSlug).toBe('frontend-developer');
       expect(result.learningPathId).toBe(mockLearningPathId);
     });
 
@@ -348,10 +352,14 @@ describe('OnboardingService', () => {
       prisma.learningPath.findUnique.mockResolvedValue({ id: mockLearningPathId });
       aiService.chat.mockResolvedValue(
         JSON.stringify({
-          primaryPath: 'frontend-developer',
-          alternativePaths: [],
-          reason: 'Test',
-          focusAreas: ['Test'],
+          rankings: [
+            {
+              pathSlug: 'frontend-developer',
+              matchScore: 95,
+              explanation: 'Test',
+              focusAreas: ['Test'],
+            },
+          ],
           tips: ['Test'],
         }),
       );
