@@ -123,18 +123,36 @@ Available learning paths (use EXACTLY these slugs):
 
 IMPORTANT - You MUST respond with ONLY a valid JSON object, no markdown, no explanation outside JSON:
 {
-  "primaryPath": "<one of the valid slugs above>",
-  "alternativePaths": ["<slug>", "<slug>"],
-  "reason": "<1-2 sentences explaining why this path fits the user, in Vietnamese>",
-  "focusAreas": ["<topic 1>", "<topic 2>", "<topic 3>"],
+  "rankings": [
+    {
+      "pathSlug": "<one of the valid slugs above>",
+      "matchScore": <number 0-100>,
+      "explanation": "<2-3 sentences explaining why this path fits THIS specific user, in Vietnamese, referencing their career goal, skill level, and background>",
+      "focusAreas": ["<topic 1>", "<topic 2>", "<topic 3>"]
+    },
+    {
+      "pathSlug": "<slug>",
+      "matchScore": <number 0-100>,
+      "explanation": "<2-3 sentences>",
+      "focusAreas": ["<topic>"]
+    },
+    {
+      "pathSlug": "<slug>",
+      "matchScore": <number 0-100>,
+      "explanation": "<2-3 sentences>",
+      "focusAreas": ["<topic>"]
+    }
+  ],
   "tips": ["<personalized tip 1>", "<personalized tip 2>"]
 }
 
 Rules:
-- primaryPath MUST be one of: ${validSlugs}
-- alternativePaths: 0-2 other relevant slugs (can be empty array [])
-- reason: in Vietnamese, mention their background and goal specifically
-- focusAreas: 3-5 specific topics they should focus on given their prior knowledge gaps
+- rankings MUST contain exactly 3 items, sorted by matchScore descending
+- Each pathSlug MUST be one of: ${validSlugs}
+- All 3 pathSlugs must be different
+- matchScore: integer 0-100, top recommendation should be highest
+- explanation: in Vietnamese, MUST reference the user's specific data (career goal, prior knowledge, background). Example: "Bạn muốn làm Frontend Developer, đã biết HTML/CSS cơ bản — lộ trình này giúp bạn nhanh nhất"
+- focusAreas: 2-4 specific topics per path
 - tips: 2-3 actionable study tips based on their hours/week and background
 - Respond ONLY with the JSON object, nothing else`;
 
